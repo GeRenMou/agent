@@ -1,0 +1,72 @@
+# === 编译产物 ===
+*.exe
+*.o
+*.obj
+*.out
+*.class
+*.layout
+*.ilk
+*.pdb
+*.idb
+*.ipch
+*.recipe
+
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+flask_session/
+
+# === 构建与临时文件 ===
+*.tmp
+*.log
+*.zip
+*.docx
+*.doc
+*.tlog/
+
+# === Visual Studio ===
+.vs/
+*.suo
+*.vcxproj*
+*.sln
+Browse.VC.db
+Solution.VC.db
+DocumentLayout.json
+DocumentLayout.backup.json
+
+# === IDE / 编辑器 ===
+.vscode/
+.idea/
+*.dev
+*.iml
+
+# === 系统文件 ===
+Thumbs.db
+Desktop.ini
+*.lnk
+
+# === 环境变量与依赖 ===
+.env
+node_modules/
+.mvn/
+
+# === 图片 ===
+*.jpeg
+*.jpg
+*.webp
+*.png
+
+# === PPT ===
+*.pptx
+
+# === Java Maven ===
+mvnw
+mvnw.cmd
+pom.xml
+
+# === .gitattributes ===
+.gitattributes

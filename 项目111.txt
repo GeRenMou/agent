@@ -1,0 +1,586 @@
+import os
+import streamlit as st
+from langchain.agents import create_agent
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
+from typing import List, Dict
+
+# 初始化模型 - DeepSeek
+model = init_chat_model(
+    model="deepseek-chat",
+    model_provider="openai",
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    base_url="https://api.deepseek.com/v1",
+    temperature=1.2,
+)
+
+# 初始化内存检查点保存器
+# memory = InMemorySaver()
+
+# 定义故事智能体的系统提示
+STORY_PROMPT = """
+你是一个互动故事叙述者，正在讲述一个"王子从恶龙手里救公主"的故事。
+
+**严格规则：**
+1. **只输出故事情节本身**，不要添加任何额外内容
+2. **禁止生成章节标题**（如"第一章"、"场景一"等）
+3. **禁止添加说明性文字**（如"以下是故事"、"你来到..."等引导语）
+4. 每次只推进一小段情节（50-100字）
+5. 每段情节后必须给出3个选项供用户选择
+6. 选项格式必须严格为：【选项1】描述内容 【选项2】描述内容 【选项3】描述内容
+7. 每个选项的描述要简洁明了（不超过20字）
+8. 用户的选择会影响后续情节和结局
+9. 故事要有多个可能的结局（成功救出公主、失败被恶龙击败、意外发现真相等）
+10. 保持故事的紧张感和趣味性
+11. 不要一次性讲完整个故事，要循序渐进
+12. 确保三个选项都有明显的区别
+13. **重要**：你必须严格根据用户的实际选择来推进情节，不能臆造用户未做的选择
+14. **重要**：如果用户说"我选择：XXX"，你只能基于这个选择继续故事，不能假设用户选择了其他选项
+15. 记住用户之前的所有选择，让故事连贯发展
+16. 根据历史选择调整情节走向，体现因果关系
+17. 当故事达到自然结局时，在回复末尾添加特殊标记：
+    - 成功结局：【结局:成功】
+    - 失败结局：【结局:失败】
+    - 其他结局：【结局:特殊】
+18. 结局章节不需要再提供选项，直接讲述最终结果
+19. 根据用户的选择序列合理判断何时应该结束故事，不要无限延续
+
+**输出格式示例：**
+正确的输出应该是：
+```
+王子握紧手中的宝剑，小心翼翼地踏入黑暗的山洞。潮湿的空气中弥漫着硫磺的味道，远处传来低沉的咆哮声。突然，前方出现了三条岔路：左边的通道闪烁着微弱的蓝光，中间的通道传来水滴声，右边的通道则一片死寂。
+【选项1】走向闪烁蓝光的左侧通道 【选项2】循着水滴声走中间通道 【选项3】探索死寂的右侧通道
+```
+
+**错误示例（禁止这样输出）：**
+```
+### 第三章：山洞探险
+王子来到了山洞...
+
+---
+请做出你的选择：
+1. ...
+```
+
+请直接开始讲述故事，不要有任何开场白或结束语。
+"""
+
+
+def initialize_story():
+    """初始化故事状态"""
+    return {
+        "chapter": 1,
+        "choices_made": [],
+        "hero_status": "healthy",
+        "dragon_status": "alive",
+        "princess_status": "captured",
+        "story_history": [],
+        "story_summary": "",  # 故事摘要（混合记忆的核心）
+        "summary_update_interval": 5  # 每5章更新一次摘要
+    }
+
+
+def create_story_agent():
+    """创建故事智能体（不使用checkpointer，手动管理历史）"""
+    agent = create_agent(
+        model=model,
+        tools=[],
+        system_prompt=STORY_PROMPT
+        # 不使用checkpointer，我们手动管理对话历史
+    )
+    return agent
+
+
+def generate_story_summary(agent, conversation_history: List, current_summary: str = "") -> str:
+    """生成故事摘要，用于混合记忆系统
+    
+    Args:
+        agent: 故事智能体
+        conversation_history: 完整的对话历史
+        current_summary: 当前的摘要内容
+    
+    Returns:
+        更新后的故事摘要
+    """
+    # 构建摘要生成提示
+    summary_prompt = f"""请为以下互动故事生成一个简洁的摘要（200字以内），包含：
+1. 故事背景和主要情节发展
+2. 玩家做出的关键选择
+3. 当前故事状态（英雄、恶龙、公主的状态）
+4. 重要的因果关系
+
+现有摘要（如果有）：
+{current_summary if current_summary else "无"}
+
+最近的对话历史：
+"""
+    
+    # 只取最近的10条消息用于生成摘要
+    recent_messages = conversation_history[-10:] if len(conversation_history) > 10 else conversation_history
+    for msg in recent_messages:
+        role = "用户" if isinstance(msg, HumanMessage) else "AI"
+        content = str(msg.content)[:200]  # 限制每条消息长度
+        summary_prompt += f"{role}: {content}\n"
+    
+    summary_prompt += "\n请生成简洁的故事摘要："
+    
+    try:
+        # 使用模型生成摘要
+        messages = [HumanMessage(content=summary_prompt)]
+        response_chunks = []
+        for event in agent.stream({"messages": messages}):
+            if 'model' in event and 'messages' in event['model']:
+                for msg in event['model']['messages']:
+                    if hasattr(msg, 'content') and msg.content:
+                        response_chunks.append(msg.content)
+            elif 'messages' in event:
+                for msg in event['messages']:
+                    if hasattr(msg, 'content') and msg.content:
+                        response_chunks.append(msg.content)
+        
+        new_summary = "".join(response_chunks).strip()
+        print(f"[DEBUG] 生成新摘要，长度: {len(new_summary)} 字符")
+        return new_summary
+    except Exception as e:
+        print(f"[ERROR] 生成摘要失败: {str(e)}")
+        return current_summary  # 失败时返回旧摘要
+
+
+def build_hybrid_context(conversation_history: List, story_summary: str, max_recent_rounds: int = 3) -> List:
+    """构建混合上下文：摘要 + 最近完整对话
+    
+    Args:
+        conversation_history: 完整的对话历史
+        story_summary: 故事摘要
+        max_recent_rounds: 保留最近完整对话的轮数（默认3轮=6条消息）
+    
+    Returns:
+        优化后的消息列表
+    """
+    messages = []
+    
+    # 如果有摘要，先添加摘要作为系统消息
+    if story_summary:
+        summary_message = SystemMessage(
+            content=f"【故事背景摘要】\n{story_summary}\n\n请基于以上摘要和后续对话继续故事。"
+        )
+        messages.append(summary_message)
+        print(f"[DEBUG] 添加故事摘要到上下文，长度: {len(story_summary)} 字符")
+    
+    # 保留最近的完整对话（最近N轮）
+    max_recent_messages = max_recent_rounds * 2  # 每轮包含用户和AI两条消息
+    if len(conversation_history) > max_recent_messages:
+        recent_messages = conversation_history[-max_recent_messages:]
+        print(f"[DEBUG] 保留最近{max_recent_rounds}轮完整对话（{len(recent_messages)}条消息）")
+    else:
+        recent_messages = list(conversation_history)
+        print(f"[DEBUG] 对话历史较短，保留全部{len(recent_messages)}条消息")
+    
+    messages.extend(recent_messages)
+    
+    return messages
+
+
+def generate_story_segment(agent, conversation_history: List, user_choice: str = None, 
+                          story_summary: str = "") -> str:
+    """生成故事片段（使用混合记忆系统）
+    
+    Args:
+        agent: 故事智能体
+        conversation_history: 完整的对话历史列表 [HumanMessage, AIMessage, HumanMessage, ...]
+        user_choice: 用户当前的选择（如果有）
+        story_summary: 故事摘要（用于混合记忆）
+    """
+    # 使用混合记忆系统构建上下文
+    messages = build_hybrid_context(conversation_history, story_summary, max_recent_rounds=3)
+    
+    # 添加当前用户消息
+    if user_choice:
+        user_message = HumanMessage(content=f"我选择：{user_choice}")
+        print(f"[DEBUG] 传递给AI的用户选择: {user_choice}")
+    else:
+        # 第一次启动故事
+        user_message = HumanMessage(content="开始故事，请介绍背景并给出第一个场景的3个选项")
+        print("[DEBUG] 开始新故事")
+    
+    messages.append(user_message)
+    
+    print(f"[DEBUG] 当前上下文长度: {len(messages)} 条消息（含摘要）")
+    
+    # 估算token数量
+    total_chars = sum(len(str(msg.content)) for msg in messages)
+    estimated_tokens = int(total_chars * 1.5)
+    print(f"[DEBUG] 估算Token数量: ~{estimated_tokens}")
+    
+    # 使用agent.stream进行流式输出
+    response_chunks = []
+    for event in agent.stream({"messages": messages}):
+        # LangGraph Agent的事件结构：{'model': {'messages': [AIMessage(...)]}}
+        if 'model' in event and 'messages' in event['model']:
+            for msg in event['model']['messages']:
+                if hasattr(msg, 'content') and msg.content:
+                    response_chunks.append(msg.content)
+        elif 'messages' in event:
+            for msg in event['messages']:
+                if hasattr(msg, 'content') and msg.content:
+                    response_chunks.append(msg.content)
+        elif 'agent' in event and 'messages' in event['agent']:
+            for msg in event['agent']['messages']:
+                if hasattr(msg, 'content') and msg.content:
+                    response_chunks.append(msg.content)
+
+    ai_response = "".join(response_chunks)
+    print(f"[DEBUG] AI响应长度: {len(ai_response)} 字符")
+    return ai_response
+
+
+def parse_options(text: str) -> List[str]:
+    """从文本中解析选项"""
+    import re
+
+    # 尝试多种解析模式
+    # 模式1: 【选项1】... 【选项2】... 【选项3】...
+    options = re.findall(r'【选项\d+】([^【]+)', text)
+
+    # 模式2: 选项1:... 选项2:... 选项3:...
+    if not options or len(options) < 3:
+        options = re.findall(r'选项\d+[:：]\s*([^选项]+?)(?=选项\d+|$)', text)
+
+    # 模式3: 1. ... 2. ... 3. ...
+    if not options or len(options) < 3:
+        options = re.findall(r'\d+\.\s*([^\d]+?)(?=\d+\.|$)', text)
+
+    # 清理选项文本
+    cleaned_options = []
+    for opt in options:
+        # 去除首尾空白和换行
+        opt = opt.strip()
+        # 如果选项太长，截取前50个字符
+        if len(opt) > 50:
+            opt = opt[:50] + "..."
+        if opt:
+            cleaned_options.append(opt)
+
+    # 如果没有解析到足够的选项，返回默认选项
+    if len(cleaned_options) < 3:
+        print(f"警告: 只解析到 {len(cleaned_options)} 个选项，原文: {text[:200]}")
+        # 尝试从文本中提取可能的行动动词
+        fallback_options = []
+        action_words = ['前进', '后退', '观察', '攻击', '防御', '逃跑', '对话', '探索', '等待', '搜索']
+        for word in action_words:
+            if word in text and len(fallback_options) < 3:
+                fallback_options.append(f"{word}")
+
+        # 如果还是不够，使用通用选项
+        while len(fallback_options) < 3:
+            defaults = ['继续前进', '谨慎观察', '寻求帮助']
+            for default in defaults:
+                if default not in fallback_options and len(fallback_options) < 3:
+                    fallback_options.append(default)
+
+        return fallback_options[:3]
+
+    return cleaned_options[:3]
+
+
+def check_ending(text: str) -> str:
+    """检查文本中是否包含结局标记，返回结局类型"""
+    import re
+
+    # 查找结局标记
+    success_match = re.search(r'【结局:成功】', text)
+    failure_match = re.search(r'【结局:失败】', text)
+    special_match = re.search(r'【结局:特殊】', text)
+
+    if success_match:
+        return "success"
+    elif failure_match:
+        return "failure"
+    elif special_match:
+        return "special"
+    else:
+        return None
+
+
+def update_story_state(state: Dict, choice: str):
+    """根据选择更新故事状态"""
+    state["chapter"] += 1
+
+    # 简单的状态更新逻辑（可以根据需要扩展）
+    if "战斗" in choice or "攻击" in choice:
+        if state["chapter"] > 3:
+            state["dragon_status"] = "weakened"
+    elif "逃跑" in choice or "撤退" in choice:
+        state["hero_status"] = "tired"
+    elif "公主" in choice and state["chapter"] > 5:
+        state["princess_status"] = "rescued"
+
+    return state
+
+
+# Streamlit界面
+def main():
+    st.set_page_config(
+        page_title="互动故事",
+        page_icon="📖",
+        layout="wide"
+    )
+
+    st.title("📖 互动故事")
+    st.markdown("---")
+    
+    # 重要提示：防止用户误刷新
+    # if 'story_started' in st.session_state and st.session_state.story_started:
+    #     st.warning("⚠️ **注意**：请勿刷新浏览器页面，否则故事进度会丢失！如需重新开始，请使用左侧的“重新开始”按钮。")
+
+    # 初始化session state
+    if 'story_state' not in st.session_state:
+        st.session_state.story_state = initialize_story()
+        st.session_state.story_started = False
+        st.session_state.current_text = ""
+        st.session_state.options = []
+        st.session_state.game_over = False
+        st.session_state.conversation_history = []  # 手动管理对话历史
+        st.session_state.agent = create_story_agent()  # 创建agent，不需要thread_id
+        st.session_state.last_summary_chapter = 0  # 上次更新摘要的章节
+
+    # 侧边栏显示故事状态
+    with st.sidebar:
+        st.header("📊 故事状态")
+        if st.session_state.story_started:
+            state = st.session_state.story_state
+            st.info(f"**章节**: 第{state['chapter']}章")
+            st.info(f"**英雄状态**: {state['hero_status']}")
+            st.info(f"**恶龙状态**: {state['dragon_status']}")
+            st.info(f"**公主状态**: {state['princess_status']}")
+            st.info(f"**已做选择**: {len(state['choices_made'])}次")
+            
+            # 显示摘要信息
+            if state.get('story_summary'):
+                with st.expander("📝 故事摘要", expanded=False):
+                    st.write(state['story_summary'])
+                    st.caption(f"摘要长度: {len(state['story_summary'])} 字符")
+
+        st.markdown("---")
+        if st.button("🔄 重新开始"):
+            st.session_state.story_state = initialize_story()
+            st.session_state.story_started = False
+            st.session_state.current_text = ""
+            st.session_state.options = []
+            st.session_state.game_over = False
+            st.session_state.conversation_history = []  # 清空对话历史
+            st.session_state.agent = create_story_agent()  # 重新创建agent
+            st.session_state.last_summary_chapter = 0  # 重置摘要章节
+            st.rerun()
+
+    # 主故事区域
+    story_container = st.container()
+
+    with story_container:
+        if not st.session_state.story_started:
+            st.markdown("### 🏰 故事背景")
+            st.markdown("""
+            在遥远的王国，美丽的公主被邪恶的巨龙掳走，关押在黑暗的山洞中。
+
+            勇敢的王子踏上了营救公主的征程。一路上，他将面临各种挑战和选择。
+
+            **你的每一个选择都将影响故事的走向和结局！**
+            """)
+
+            if st.button("⚔️ 开始冒险", type="primary", use_container_width=True):
+                st.session_state.story_started = True
+                st.rerun()
+
+        else:
+            # 显示故事历史
+            if st.session_state.story_state['story_history']:
+                with st.expander("📜 查看故事历史", expanded=False):
+                    for i, history in enumerate(st.session_state.story_state['story_history'], 1):
+                        st.markdown(f"**第{i}章**: {history}")
+
+            # 生成或显示当前故事片段
+            if not st.session_state.current_text:
+                # 使用agent.stream进行流式输出，实时显示生成过程
+                story_placeholder = st.empty()
+
+                with st.spinner("🎭 故事生成中..."):
+                    try:
+                        # 确定用户选择
+                        user_choice = None
+                        if st.session_state.story_state['choices_made']:
+                            # 有历史选择，使用最后一次选择
+                            user_choice = st.session_state.story_state['choices_made'][-1]
+                        
+                        # 获取当前故事摘要
+                        current_summary = st.session_state.story_state.get('story_summary', '')
+                        
+                        # 调用generate_story_segment，使用混合记忆系统
+                        full_text = generate_story_segment(
+                            st.session_state.agent,
+                            st.session_state.conversation_history,
+                            user_choice,
+                            current_summary
+                        )
+                        
+                        # 检查AI响应是否有效
+                        if not full_text or len(full_text.strip()) == 0:
+                            st.error("❌ AI未返回有效内容，请重试")
+                            st.session_state.current_text = "生成失败，请重新尝试"
+                            st.session_state.options = []
+                            st.rerun()
+                        
+                        # 流式显示（由于generate_story_segment已经返回完整文本，这里直接显示）
+                        story_placeholder.markdown(full_text)
+
+                        # 保存AI响应到对话历史
+                        st.session_state.conversation_history.append(AIMessage(content=full_text))
+                        
+                        # 检查是否需要更新摘要（每N章更新一次）
+                        current_chapter = st.session_state.story_state['chapter']
+                        last_summary_chapter = getattr(st.session_state, 'last_summary_chapter', 0)
+                        summary_interval = st.session_state.story_state.get('summary_update_interval', 5)
+                        
+                        if current_chapter > 1 and (current_chapter - last_summary_chapter) >= summary_interval:
+                            with st.spinner("🔄 更新故事摘要..."):
+                                new_summary = generate_story_summary(
+                                    st.session_state.agent,
+                                    st.session_state.conversation_history,
+                                    current_summary
+                                )
+                                if new_summary:
+                                    st.session_state.story_state['story_summary'] = new_summary
+                                    st.session_state.last_summary_chapter = current_chapter
+                                    print(f"[DEBUG] 在第{current_chapter}章更新了故事摘要")
+                        
+                        # 清除加载动画，保存内容
+                        story_placeholder.empty()
+                        st.session_state.current_text = full_text
+                        st.session_state.options = parse_options(full_text)
+
+                        # 检查是否到达结局
+                        ending_type = check_ending(full_text)
+                        if ending_type:
+                            st.session_state.game_over = True
+                            st.session_state.ending_type = ending_type
+                            # 结局不需要选项
+                            st.session_state.options = []
+
+                        st.rerun()
+                        
+                    except Exception as e:
+                        print(f"[ERROR] 故事生成失败: {str(e)}")
+                        st.error(f"❌ 故事生成失败: {str(e)}")
+                        st.info("💡 提示：可能是API连接问题或token限制，请尝试重新开始")
+                        st.session_state.current_text = f"生成出错：{str(e)[:200]}"
+                        st.session_state.options = []
+                        st.rerun()
+
+            # 显示当前故事内容
+            st.markdown("### 📖 当前章节")
+            st.markdown(st.session_state.current_text)
+            
+            # 调试信息：显示上一次用户的选择和对话历史（如果有）
+            if st.session_state.story_state['choices_made']:
+                with st.expander("🔍 调试信息", expanded=False):
+                    st.write(f"**上一次用户选择**: {st.session_state.story_state['choices_made'][-1]}")
+                    st.write(f"**所有历史选择**: {st.session_state.story_state['choices_made']}")
+                    st.write(f"**对话历史长度**: {len(st.session_state.conversation_history)} 条消息")
+                    
+                    # 计算混合记忆的token消耗
+                    current_summary = st.session_state.story_state.get('story_summary', '')
+                    recent_messages_count = min(6, len(st.session_state.conversation_history))  # 最近3轮=6条
+                    
+                    # 估算摘要token
+                    summary_tokens = int(len(current_summary) * 1.5) if current_summary else 0
+                    # 估算最近对话token
+                    recent_chars = sum(len(str(msg.content)) for msg in st.session_state.conversation_history[-recent_messages_count:])
+                    recent_tokens = int(recent_chars * 1.5)
+                    # 总token
+                    total_estimated_tokens = summary_tokens + recent_tokens
+                    
+                    # 完整历史的token（对比用）
+                    total_chars_full = sum(len(str(msg.content)) for msg in st.session_state.conversation_history)
+                    estimated_tokens_full = int(total_chars_full * 1.5)
+                    
+                    # 节省的token
+                    saved_tokens = estimated_tokens_full - total_estimated_tokens
+                    saved_percentage = (saved_tokens / estimated_tokens_full * 100) if estimated_tokens_full > 0 else 0
+                    
+                    st.success(f"✅ **混合记忆优化**:")
+                    st.write(f"- 摘要Token: ~{summary_tokens}")
+                    st.write(f"- 最近对话Token: ~{recent_tokens}")
+                    st.write(f"- **当前使用Token: ~{total_estimated_tokens}**")
+                    st.write(f"- 完整历史Token: ~{estimated_tokens_full}")
+                    st.write(f"- 💰 **节省Token: ~{saved_tokens} ({saved_percentage:.1f}% )**")
+                    
+                    # 显示最近的5条对话历史
+                    if st.session_state.conversation_history:
+                        st.write("**最近对话历史**:")
+                        for idx, msg in enumerate(st.session_state.conversation_history[-5:]):
+                            msg_type = "👤 用户" if isinstance(msg, HumanMessage) else "🤖 AI"
+                            preview = str(msg.content)[:100] + "..." if len(str(msg.content)) > 100 else str(msg.content)
+                            st.write(f"{idx - 4}: {msg_type} - {preview}")
+
+            # 显示选项按钮
+            if st.session_state.options and not st.session_state.game_over:
+                st.markdown("---")
+                st.markdown("### 🎯 做出你的选择")
+
+                # 垂直排列选项按钮，显示完整内容
+                for i, option in enumerate(st.session_state.options):
+                    # 使用更清晰的按钮标签，显示选项内容
+                    button_label = f"{i + 1}. {option}"
+                    if st.button(
+                            button_label,
+                            use_container_width=True,
+                            key=f"choice_{st.session_state.story_state['chapter']}_{i}",
+                            type="secondary"
+                    ):  
+                        print(f"[DEBUG] 用户点击按钮 - 章节:{st.session_state.story_state['chapter']}, 选项索引:{i}, 选项内容:{option}")  # 调试信息
+
+                        # 将用户选择保存到对话历史
+                        st.session_state.conversation_history.append(HumanMessage(content=f"我选择：{option}"))
+                        
+                        # 记录用户的选择（重要：必须添加到choices_made）
+                        st.session_state.story_state['choices_made'].append(option)
+                        
+                        # 更新状态并生成下一段
+                        st.session_state.story_state = update_story_state(
+                            st.session_state.story_state,
+                            option
+                        )
+                        print(f"[DEBUG] 更新后的章节: {st.session_state.story_state['chapter']}, choices_made: {st.session_state.story_state['choices_made']}")
+                        print(f"[DEBUG] 对话历史长度: {len(st.session_state.conversation_history)} 条消息")
+                        
+                        # 清空当前显示，准备生成新内容
+                        st.session_state.current_text = ""
+                        st.session_state.options = []
+                        st.rerun()
+
+            # 游戏结束提示
+            if st.session_state.game_over:
+                ending_type = getattr(st.session_state, 'ending_type', None)
+
+                if ending_type == "success":
+                    st.success("🎉 恭喜！你成功完成了冒险！")
+                    st.markdown("### 🏆 成功结局")
+                    st.markdown("**王子成功救出了公主，王国恢复了和平！**")
+                elif ending_type == "failure":
+                    st.error("💀 很遗憾，冒险失败了...")
+                    st.markdown("### 😢 失败结局")
+                    st.markdown("**王子未能救出公主，故事以悲剧收场。**")
+                elif ending_type == "special":
+                    st.info("✨ 你触发了特殊结局！")
+                    st.markdown("### 🌟 特殊结局")
+                    st.markdown("**故事走向了意想不到的方向...**")
+                else:
+                    st.success("🎉 故事已结束！感谢体验！")
+
+                st.markdown("---")
+                st.markdown("**你可以在左侧重新开始新的冒险！**")
+
+
+if __name__ == "__main__":
+    main()

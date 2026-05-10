@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧文娱生成Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* 头部样式 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .main-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* 内容区域 */
+        .content {
+            padding: 2rem;
+        }
+
+        /* 模式选择卡片 */
+        .mode-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .mode-card {
+            padding: 2rem;
+            border-radius: 15px;
+            color: white;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .mode-card.interactive {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .mode-card.novel {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .mode-card.comic {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .mode-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .mode-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .mode-card li {
+            margin: 0.5rem 0;
+            font-size: 1rem;
+        }
+
+        .mode-card button {
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border: none;
+            border-radius: 10px;
+            background: white;
+            color: #667eea;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-card button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .mode-card.comic button {
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border: none;
+            border-radius: 10px;
+            background: white;
+            color: #4facfe;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-card.comic button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 表单样式 */
+        .form-container {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-top: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            padding: 0.8rem 1.5rem;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        /* 故事/小说显示区域 */
+        .story-display {
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+            padding: 2rem;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin: 2rem 0;
+            min-height: 200px;
+        }
+
+        .novel-display {
+            border-left-color: #f093fb;
+        }
+
+        /* 选项按钮 */
+        .options-container {
+            margin-top: 2rem;
+        }
+
+        .option-btn {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            color: #667eea;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .option-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .option-btn.custom {
+            border-color: #28a745;
+            color: #28a745;
+        }
+
+        .option-btn.custom:hover {
+            background: #28a745;
+            color: white;
+        }
+
+        /* 自定义行动输入 */
+        .custom-action-input {
+            margin-top: 1rem;
+        }
+
+        .custom-action-input input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar h3 {
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .sidebar-info {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 5px;
+        }
+
+        /* 加载动画 */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #f3f3f3;
+            border-radius: 2px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            animation: progress 2s ease-in-out infinite;
+            width: 30%;
+        }
+
+        @keyframes progress {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(400%); }
+        }
+
+        /* 结局提示 */
+        .ending-success {
+            background: #d4edda;
+            color: #155724;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+
+        .ending-failure,
+        .ending-bad {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+
+        .ending-death {
+            background: #212529;
+            color: #dc3545;
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+            border: 3px solid #dc3545;
+        }
+
+        .ending-death h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .ending-special {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+
+        .ending-death {
+            background: #212529;
+            color: #dc3545;
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+            border: 3px solid #dc3545;
+        }
+
+        .ending-death h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        /* 错误提示 */
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        /* 章节导航 */
+        .chapter-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .chapter-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .chapter-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .chapter-btn.active {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .chapter-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 隐藏类 */
+        .hidden {
+            display: none !important;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 1.8rem;
+            }
+
+            .mode-selection {
+                grid-template-columns: 1fr;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1 class="main-title">📖 智慧文娱生成Agent</h1>
+            <p class="subtitle">AI驱动的文娱内容创作平台</p>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="content">
+            <!-- 模式选择界面 -->
+            <div id="modeSelection">
+                <div style="text-align: center; margin-bottom: 3rem;">
+                    <h2 style="color: #667eea;">✨ 探索无限创意世界</h2>
+                    <p style="font-size: 1.1rem; color: #666;">选择你喜欢的创作模式，让AI助你开启精彩的故事之旅</p>
+                </div>
+
+                <div class="mode-selection">
+                    <div class="mode-card interactive">
+                        <h3>📖 互动故事</h3>
+                        <hr style="border-color: rgba(255,255,255,0.3); margin: 1rem 0;">
+                        <ul>
+                            <li>✓ 自定义故事背景</li>
+                            <li>✓ 多分支剧情发展</li>
+                            <li>✓ 多种结局</li>
+                            <li>✓ AI实时生成内容</li>
+                        </ul>
+                        <button onclick="selectMode('interactive')">🚀 开始互动故事</button>
+                    </div>
+
+                    <div class="mode-card novel">
+                        <h3>📚 网文小说</h3>
+                        <hr style="border-color: rgba(255,255,255,0.3); margin: 1rem 0;">
+                        <ul>
+                            <li>✓ AI自动连载创作</li>
+                            <li>✓ 自定义题材风格</li>
+                            <li>✓ 持续章节更新</li>
+                            <li>✓ 智能情节规划</li>
+                        </ul>
+                        <button onclick="selectMode('novel')">🚀 开始网文创作</button>
+                    </div>
+
+                    <div class="mode-card comic">
+                        <h3>🎨 漫画模式</h3>
+                        <hr style="border-color: rgba(255,255,255,0.3); margin: 1rem 0;">
+                        <ul>
+                            <li>✓ AI生成单幅漫画</li>
+                            <li>✓ 每章一张精美图片</li>
+                            <li>✓ 图文并茂体验</li>
+                            <li>✓ 角色形象设计</li>
+                        </ul>
+                        <button onclick="selectMode('comic')">🚀 开始漫画创作</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 互动故事配置界面 -->
+            <div id="storyConfig" class="hidden">
+                <button class="btn-secondary" onclick="backToHome()" style="margin-bottom: 1rem;">🏠 返回主页面</button>
+
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            padding: 2rem; border-radius: 15px; color: white; margin-bottom: 2rem;">
+                    <h2 style="margin-top: 0;">🎭 创建你的冒险故事</h2>
+                    <p style="font-size: 1.1rem; line-height: 1.8;">
+                        设定故事的背景和主题，AI将为你生成一个独一无二的互动冒险故事。
+                        你的每一个选择都将影响故事的走向和结局！
+                    </p>
+                </div>
+
+                <div class="form-container">
+                    <div class="form-group">
+                        <label>🎯 故事主题</label>
+                        <select id="storyTheme">
+                            <option value="奇幻冒险">奇幻冒险</option>
+                            <option value="科幻探索">科幻探索</option>
+                            <option value="悬疑推理">悬疑推理</option>
+                            <option value="恐怖惊悚">恐怖惊悚</option>
+                            <option value="武侠江湖">武侠江湖</option>
+                            <option value="末日生存">末日生存</option>
+                            <option value="宫廷权谋">宫廷权谋</option>
+                            <option value="校园生活">校园生活</option>
+                            <option value="自定义">自定义</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group hidden" id="customThemeGroup">
+                        <label>请输入自定义主题</label>
+                        <input type="text" id="customTheme" placeholder="例如：太空探险、古代战争...">
+                    </div>
+
+                    <div class="form-group">
+                        <label>🌍 故事背景（可选）</label>
+                        <textarea id="storyBackground" placeholder="例如：在一个被魔法笼罩的大陆上，你是一名年轻的冒险者...\n或者：2077年，人类已经移民火星，你是一名星际侦探..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>⚔️ 故事难度</label>
+                        <select id="storyDifficulty">
+                            <option value="简单">简单</option>
+                            <option value="普通" selected>普通</option>
+                            <option value="困难">困难</option>
+                            <option value="地狱">地狱</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-primary" onclick="startStory()">🚀 开始冒险</button>
+                </div>
+            </div>
+
+            <!-- 互动故事游戏界面 -->
+            <div id="storyGame" class="hidden">
+                <div class="sidebar">
+                    <button class="btn-secondary" onclick="backToHome()" style="width: 100%; margin-bottom: 1rem;">🏠 返回主页面</button>
+                    <h3>📊 故事状态</h3>
+                    <div class="sidebar-info">章节: <span id="storyChapter">1</span></div>
+                    <div class="sidebar-info">已做选择: <span id="storyChoices">0</span>次</div>
+                    <div class="sidebar-info">难度: <span id="storyDifficultyDisplay">普通</span></div>
+                    <div class="sidebar-info" id="healthInfo" style="display: none;">生命值: <span id="playerHealth">100</span>%</div>
+                    <button class="btn-secondary" onclick="resetStory()" style="width: 100%; margin-top: 1rem;">🔄 重新开始故事</button>
+                </div>
+
+                <div id="storyContent"></div>
+                <div id="storyOptions" class="options-container"></div>
+                <div id="customActionArea" class="custom-action-input hidden">
+                    <p>💬 请输入你的自定义行动：</p>
+                    <input type="text" id="customActionInput" placeholder="例如：我小心翼翼地观察四周，寻找隐藏的线索...">
+                    <button class="btn-primary" onclick="submitCustomAction()">✅ 确认行动</button>
+                    <button class="btn-secondary" onclick="cancelCustomAction()" style="margin-top: 0.5rem;">❌ 取消</button>
+                </div>
+            </div>
+
+            <!-- 网文小说配置界面 -->
+            <div id="novelConfig" class="hidden">
+                <button class="btn-secondary" onclick="backToHome()" style="margin-bottom: 1rem;">🏠 返回主页面</button>
+
+                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                            padding: 2rem; border-radius: 15px; color: white; margin-bottom: 2rem;">
+                    <h2 style="margin-top: 0;">📚 创建你的网络小说</h2>
+                    <p style="font-size: 1.1rem; line-height: 1.8;">
+                        设定小说的题材、风格和背景，AI将为你创作精彩的连载故事。
+                        每一章都扣人心弦，让读者欲罢不能！
+                    </p>
+                </div>
+
+                <div class="form-container">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>📖 选择题材</label>
+                            <select id="novelGenre">
+                                <option value="玄幻">玄幻</option>
+                                <option value="都市">都市</option>
+                                <option value="仙侠">仙侠</option>
+                                <option value="科幻">科幻</option>
+                                <option value="历史">历史</option>
+                                <option value="悬疑">悬疑</option>
+                                <option value="游戏">游戏</option>
+                                <option value="灵异">灵异</option>
+                                <option value="武侠">武侠</option>
+                                <option value="奇幻">奇幻</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>🎨 选择风格</label>
+                            <select id="novelStyle">
+                                <option value="热血">热血</option>
+                                <option value="轻松">轻松</option>
+                                <option value="暗黑">暗黑</option>
+                                <option value="搞笑">搞笑</option>
+                                <option value="虐心">虐心</option>
+                                <option value="甜宠">甜宠</option>
+                                <option value="权谋">权谋</option>
+                                <option value="种田">种田</option>
+                                <option value="无敌流">无敌流</option>
+                                <option value="系统流">系统流</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📊 章节模式</label>
+                        <div style="margin: 1rem 0;">
+                            <label style="display: inline-flex; align-items: center; margin-right: 2rem;">
+                                <input type="radio" name="chapterMode" value="unlimited" checked onchange="toggleChapterInput()">
+                                <span style="margin-left: 0.5rem;">无限连载</span>
+                            </label>
+                            <label style="display: inline-flex; align-items: center;">
+                                <input type="radio" name="chapterMode" value="fixed" onchange="toggleChapterInput()">
+                                <span style="margin-left: 0.5rem;">固定章数</span>
+                            </label>
+                        </div>
+                        <div id="totalChaptersInput" class="hidden">
+                            <input type="number" id="totalChapters" value="100" min="10" max="1000" step="10">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📝 故事背景/简介（可选）</label>
+                        <textarea id="novelIntro" placeholder="例如：主角是一个普通的大学生，意外获得了穿越时空的能力...\n或者：在一个修仙世界中，主角从废柴逆袭成为最强者..."></textarea>
+                    </div>
+
+                    <button class="btn-primary" onclick="startNovel()">🚀 开始创作</button>
+                </div>
+            </div>
+
+            <!-- 网文小说阅读界面 -->
+            <div id="novelReader" class="hidden">
+                <div class="sidebar">
+                    <button class="btn-secondary" onclick="backToHome()" style="width: 100%; margin-bottom: 1rem;">🏠 返回主页面</button>
+                    <h3>📊 小说信息</h3>
+                    <div class="sidebar-info">当前章节: 第<span id="novelChapter">1</span>章</div>
+                    <div class="sidebar-info" id="novelTotalInfo">总章数: <span id="novelTotal">∞</span></div>
+                    <div class="sidebar-info">题材: <span id="novelGenreDisplay"></span></div>
+                    <div class="sidebar-info">风格: <span id="novelStyleDisplay"></span></div>
+                    <button class="btn-secondary" onclick="resetNovel()" style="width: 100%; margin-top: 1rem;">🔄 重新创建小说</button>
+                </div>
+
+                <div id="novelHeader" style="text-align: center; margin-bottom: 2rem; padding: 1.5rem;
+                            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                            border-radius: 15px; color: white;">
+                    <h2 id="novelTitle"></h2>
+                    <p id="novelModeInfo"></p>
+                </div>
+
+                <div id="chapterNavigation" class="chapter-nav" style="display: none;"></div>
+
+                <div id="novelContent"></div>
+                <div id="novelActions" style="text-align: center; margin-top: 2rem;">
+                    <button class="btn-primary" id="nextChapterBtn" onclick="nextChapter()" style="max-width: 300px;">➡️ 下一章</button>
+                </div>
+            </div>
+
+            <!-- 漫画配置界面 -->
+            <div id="comicConfig" class="hidden">
+                <button class="btn-secondary" onclick="backToHome()" style="margin-bottom: 1rem;">🏠 返回主页面</button>
+
+                <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                            padding: 2rem; border-radius: 15px; color: white; margin-bottom: 2rem;">
+                    <h2 style="margin-top: 0;">🎨 创建你的漫画</h2>
+                    <p style="font-size: 1.1rem; line-height: 1.8;">
+                        设定漫画的题材、风格和背景，AI将为你创作精彩的单幅漫画。
+                        每一章都是一张精美的插画，让读者仿佛在看一部动画！
+                    </p>
+                </div>
+
+                <div class="form-container">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>📖 选择题材</label>
+                            <select id="comicGenre">
+                                <option value="奇幻">奇幻</option>
+                                <option value="科幻">科幻</option>
+                                <option value="都市">都市</option>
+                                <option value="武侠">武侠</option>
+                                <option value="悬疑">悬疑</option>
+                                <option value="恐怖">恐怖</option>
+                                <option value="校园">校园</option>
+                                <option value="冒险">冒险</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>🎨 选择风格</label>
+                            <select id="comicStyle">
+                                <option value="热血">热血</option>
+                                <option value="轻松">轻松</option>
+                                <option value="暗黑">暗黑</option>
+                                <option value="搞笑">搞笑</option>
+                                <option value="治愈">治愈</option>
+                                <option value="战斗">战斗</option>
+                                <option value="恋爱">恋爱</option>
+                                <option value="史诗">史诗</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📊 章节模式</label>
+                        <div style="margin: 1rem 0;">
+                            <label style="display: inline-flex; align-items: center; margin-right: 2rem;">
+                                <input type="radio" name="comicChapterMode" value="unlimited" checked onchange="toggleComicChapterInput()">
+                                <span style="margin-left: 0.5rem;">无限连载</span>
+                            </label>
+                            <label style="display: inline-flex; align-items: center;">
+                                <input type="radio" name="comicChapterMode" value="fixed" onchange="toggleComicChapterInput()">
+                                <span style="margin-left: 0.5rem;">固定章数</span>
+                            </label>
+                        </div>
+                        <div id="comicTotalChaptersInput" class="hidden">
+                            <input type="number" id="comicTotalChapters" value="50" min="10" max="500" step="10">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📝 故事背景/简介（可选）</label>
+                        <textarea id="comicIntro" placeholder="例如：主角是一个拥有特殊能力的少年，在异世界中展开冒险...\n或者：在未来都市中，一群年轻人对抗邪恶组织..."></textarea>
+                    </div>
+
+                    <button class="btn-primary" onclick="startComic()">🚀 开始创作</button>
+                </div>
+            </div>
+
+            <!-- 漫画阅读器界面 -->
+            <div id="comicReader" class="hidden">
+                <div class="sidebar">
+                    <button class="btn-secondary" onclick="backToHome()" style="width: 100%; margin-bottom: 1rem;">🏠 返回主页面</button>
+                    <h3>📊 漫画信息</h3>
+                    <div class="sidebar-info">当前章节: 第<span id="comicChapter">1</span>章</div>
+                    <div class="sidebar-info" id="comicTotalInfo">总章数: <span id="comicTotal">∞</span></div>
+                    <div class="sidebar-info">题材: <span id="comicGenreDisplay"></span></div>
+                    <div class="sidebar-info">风格: <span id="comicStyleDisplay"></span></div>
+                    <button class="btn-secondary" onclick="resetComic()" style="width: 100%; margin-top: 1rem;">🔄 重新创建漫画</button>
+                </div>
+
+                <div id="comicHeader" style="text-align: center; margin-bottom: 2rem; padding: 1.5rem;
+                            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                            border-radius: 15px; color: white;">
+                    <h2 id="comicTitle"></h2>
+                    <p id="comicModeInfo"></p>
+                </div>
+
+                <div id="comicChapterNavigation" class="chapter-nav" style="display: none;"></div>
+
+                <div id="comicContent"></div>
+                <div id="comicActions" style="text-align: center; margin-top: 2rem;">
+                    <button class="btn-primary" id="nextComicBtn" onclick="nextComicChapter()" style="max-width: 300px;">➡️ 下一章</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let currentMode = null;
+        let storyState = null;
+        let novelState = null;
+        let comicState = null;
+
+        // 网络状态检测
+        window.addEventListener('online', () => {
+            console.log('✅ 网络连接已恢复');
+        });
+
+        window.addEventListener('offline', () => {
+            alert('⚠️ 网络连接已断开，请检查网络设置');
+        });
+
+        // 页面加载时检查网络状态
+        if (!navigator.onLine) {
+            alert('⚠️ 当前处于离线状态，请检查网络连接');
+        }
+
+        // 选择模式
+        function selectMode(mode) {
+            currentMode = mode;
+            document.getElementById('modeSelection').classList.add('hidden');
+
+            if (mode === 'interactive') {
+                document.getElementById('storyConfig').classList.remove('hidden');
+            } else if (mode === 'novel') {
+                document.getElementById('novelConfig').classList.remove('hidden');
+            } else if (mode === 'comic') {
+                document.getElementById('comicConfig').classList.remove('hidden');
+            }
+        }
+
+        // 返回主页
+        function backToHome() {
+            currentMode = null;
+            document.getElementById('modeSelection').classList.remove('hidden');
+            document.getElementById('storyConfig').classList.add('hidden');
+            document.getElementById('storyGame').classList.add('hidden');
+            document.getElementById('novelConfig').classList.add('hidden');
+            document.getElementById('novelReader').classList.add('hidden');
+            document.getElementById('comicConfig').classList.add('hidden');
+            document.getElementById('comicReader').classList.add('hidden');
+        }
+
+        // 切换自定义主题输入框
+        document.getElementById('storyTheme').addEventListener('change', function() {
+            const customGroup = document.getElementById('customThemeGroup');
+            if (this.value === '自定义') {
+                customGroup.classList.remove('hidden');
+            } else {
+                customGroup.classList.add('hidden');
+            }
+        });
+
+        // 切换章节数输入框
+        function toggleChapterInput() {
+            const mode = document.querySelector('input[name="chapterMode"]:checked').value;
+            const inputDiv = document.getElementById('totalChaptersInput');
+            if (mode === 'fixed') {
+                inputDiv.classList.remove('hidden');
+            } else {
+                inputDiv.classList.add('hidden');
+            }
+        }
+
+        // 切换漫画章节数输入框
+        function toggleComicChapterInput() {
+            const mode = document.querySelector('input[name="comicChapterMode"]:checked').value;
+            const inputDiv = document.getElementById('comicTotalChaptersInput');
+            if (mode === 'fixed') {
+                inputDiv.classList.remove('hidden');
+            } else {
+                inputDiv.classList.add('hidden');
+            }
+        }
+
+        // ==================== 互动故事功能 ====================
+
+        // 开始故事
+        async function startStory() {
+            const themeSelect = document.getElementById('storyTheme').value;
+            const theme = themeSelect === '自定义' ? document.getElementById('customTheme').value : themeSelect;
+            const background = document.getElementById('storyBackground').value;
+            const difficulty = document.getElementById('storyDifficulty').value;
+
+            if (!theme) {
+                alert('请输入故事主题');
+                return;
+            }
+
+            // 立即显示加载状态
+            document.getElementById('storyConfig').classList.add('hidden');
+            document.getElementById('storyGame').classList.remove('hidden');
+            showLoading('storyContent', '🎭 AI正在构思你的冒险故事...\n这可能需要10-60秒，请耐心等待');
+
+            try {
+                // 使用AbortController实现超时控制
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000); // 120秒超时
+
+                const response = await fetch('/api/story/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ theme, background, difficulty }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                const data = await response.json();
+
+                if (data.success) {
+                    storyState = data;
+                    displayStoryContent(data.content, data.options, data.chapter);
+                    console.log(`故事生成耗时: ${data.generation_time}秒`);
+                } else {
+                    showError('storyContent', data.error);
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    showError('storyContent', '⏱️ 请求超时（超过120秒）。请检查网络连接或稍后重试。');
+                } else {
+                    showError('storyContent', '❌ 请求失败: ' + error.message);
+                }
+            }
+        }
+
+        // 显示故事内容
+        function displayStoryContent(content, options, chapter) {
+            document.getElementById('storyChapter').textContent = chapter;
+            document.getElementById('storyChoices').textContent = storyState ? (storyState.choices_made || 0) : 0;
+            
+            // 显示难度和生命值
+            if (storyState && storyState.difficulty) {
+                document.getElementById('storyDifficultyDisplay').textContent = storyState.difficulty;
+            }
+            if (storyState && storyState.player_health !== undefined) {
+                document.getElementById('healthInfo').style.display = 'block';
+                document.getElementById('playerHealth').textContent = storyState.player_health;
+            } else {
+                document.getElementById('healthInfo').style.display = 'none';
+            }
+
+            const contentDiv = document.getElementById('storyContent');
+            contentDiv.innerHTML = `
+                <h3>📖 当前章节</h3>
+                <div class="story-display">${content.replace(/\n/g, '<br>')}</div>
+            `;
+
+            const optionsDiv = document.getElementById('storyOptions');
+            optionsDiv.innerHTML = '';
+
+            if (options && options.length > 0 && !storyState.game_over) {
+                options.forEach((option, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    if (option.includes('自定义') || option.includes('自行')) {
+                        btn.classList.add('custom');
+                    }
+                    btn.textContent = `${index + 1}. ${option}`;
+                    btn.onclick = () => makeChoice(option);
+                    optionsDiv.appendChild(btn);
+                });
+            }
+
+            // 检查是否游戏结束
+            if (storyState && storyState.game_over) {
+                displayEnding(storyState.ending_type);
+            }
+        }
+
+        // 做出选择
+        async function makeChoice(choice) {
+            if (choice.includes('自定义') || choice.includes('自行')) {
+                document.getElementById('customActionArea').classList.remove('hidden');
+                document.getElementById('storyOptions').classList.add('hidden');
+                return;
+            }
+
+            showLoading('storyContent', '⏳ 正在根据你的选择推进故事...\n预计需要5-30秒');
+            document.getElementById('storyOptions').innerHTML = ''; // 清空选项防止重复点击
+
+            try {
+                // 使用AbortController实现超时控制
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000); // 120秒超时
+
+                const response = await fetch('/api/story/choose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ choice }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                const data = await response.json();
+
+                if (data.success) {
+                    console.log('收到响应数据:', data);
+                    storyState = data;
+                    displayStoryContent(data.content, data.options, data.chapter);
+                    console.log(`章节生成耗时: ${data.generation_time}秒`);
+                } else {
+                    showError('storyContent', data.error);
+                    // 恢复选项按钮
+                    restoreOptions();
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    showError('storyContent', '⏱️ 请求超时（超过120秒）。请检查网络连接或稍后重试。');
+                } else {
+                    showError('storyContent', '❌ 请求失败: ' + error.message);
+                }
+                restoreOptions();
+            }
+        }
+
+        // 恢复选项按钮（出错时）
+        function restoreOptions() {
+            if (storyState && storyState.options && storyState.options.length > 0) {
+                displayStoryContent(
+                    document.querySelector('.story-display')?.innerText || '',
+                    storyState.options,
+                    storyState.chapter
+                );
+            }
+        }
+
+        // 提交自定义行动
+        async function submitCustomAction() {
+            const action = document.getElementById('customActionInput').value.trim();
+            if (!action) {
+                alert('请输入你的行动内容');
+                return;
+            }
+
+            document.getElementById('customActionArea').classList.add('hidden');
+            document.getElementById('storyOptions').classList.remove('hidden');
+            document.getElementById('customActionInput').value = '';
+
+            await makeChoice(action);
+        }
+
+        // 取消自定义行动
+        function cancelCustomAction() {
+            document.getElementById('customActionArea').classList.add('hidden');
+            document.getElementById('storyOptions').classList.remove('hidden');
+            document.getElementById('customActionInput').value = '';
+        }
+
+        // 显示结局
+        function displayEnding(endingType) {
+            const contentDiv = document.getElementById('storyContent');
+            let endingHtml = '';
+
+            switch(endingType) {
+                case 'success':
+                    endingHtml = `
+                        <div class="ending-success">
+                            <h3>🎉 恭喜！你成功完成了冒险！</h3>
+                            <h4>🏆 成功结局</h4>
+                            <p><strong>你做出了正确的选择，故事圆满结束！</strong></p>
+                        </div>
+                    `;
+                    break;
+                case 'failure':
+                    endingHtml = `
+                        <div class="ending-failure">
+                            <h3>💀 很遗憾，冒险失败了...</h3>
+                            <h4>😢 失败结局</h4>
+                            <p><strong>你的选择导致了失败，但你可以重新开始尝试其他路线。</strong></p>
+                        </div>
+                    `;
+                    break;
+                case 'bad':
+                    endingHtml = `
+                        <div class="ending-bad">
+                            <h3>☠️ 坏结局触发！</h3>
+                            <h4>💀 坏结局</h4>
+                            <p><strong>你的选择导致了最糟糕的结果...也许下次应该更加谨慎？</strong></p>
+                        </div>
+                    `;
+                    break;
+                case 'death':
+                    endingHtml = `
+                        <div class="ending-death">
+                            <h3>☠️ 你死了！</h3>
+                            <h4>💀 死亡结局</h4>
+                            ${storyState.death_cause ? `<p style="font-size: 1.1rem; margin: 1rem 0;">${storyState.death_cause}</p>` : ''}
+                            <p><strong>你的冒险在此终结...</strong></p>
+                            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(220, 53, 69, 0.2); border-radius: 8px; text-align: left;">
+                                <p style="margin: 0.5rem 0;"><strong>📊 最终统计：</strong></p>
+                                <p style="margin: 0.3rem 0;">• 难度等级：${storyState.difficulty || '普通'}</p>
+                                <p style="margin: 0.3rem 0;">• 存活章节：${storyState.chapter - 1} 章</p>
+                                <p style="margin: 0.3rem 0;">• 做出选择：${storyState.choices_made ? storyState.choices_made.length : 0} 次</p>
+                            </div>
+                            <p style="margin-top: 1rem; font-size: 0.9rem;">💡 每一次死亡都是经验的积累。<br>再次尝试，也许会有不同的结局！</p>
+                        </div>
+                    `;
+                    break;
+                case 'special':
+                    endingHtml = `
+                        <div class="ending-special">
+                            <h3>✨ 你触发了特殊结局！</h3>
+                            <h4>🌟 特殊结局</h4>
+                            <p><strong>故事走向了意想不到的方向...</strong></p>
+                        </div>
+                    `;
+                    break;
+            }
+
+            endingHtml += '<p><strong>你可以在左侧重新开始新的冒险！</strong></p>';
+            contentDiv.innerHTML += endingHtml;
+            document.getElementById('storyOptions').innerHTML = '';
+        }
+
+        // 重置故事
+        async function resetStory() {
+            try {
+                await fetch('/api/story/reset', { method: 'POST' });
+                storyState = null;
+                document.getElementById('storyGame').classList.add('hidden');
+                document.getElementById('storyConfig').classList.remove('hidden');
+            } catch (error) {
+                console.error('重置失败:', error);
+            }
+        }
+
+        // ==================== 网文小说功能 ====================
+
+        // 开始小说
+        async function startNovel() {
+            const genre = document.getElementById('novelGenre').value;
+            const style = document.getElementById('novelStyle').value;
+            const chapterMode = document.querySelector('input[name="chapterMode"]:checked').value;
+            const totalChapters = chapterMode === 'fixed' ? parseInt(document.getElementById('totalChapters').value) : 0;
+            const customIntro = document.getElementById('novelIntro').value;
+
+            console.log('开始创建小说...');
+            console.log('题材:', genre, '风格:', style, '总章数:', totalChapters);
+
+            // 立即显示加载状态
+            document.getElementById('novelConfig').classList.add('hidden');
+            document.getElementById('novelReader').classList.remove('hidden');
+            showLoading('novelContent', '️ AI作家正在创作第一章...\n初次生成可能需要15-60秒，请耐心等待');
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分钟超时
+
+                console.log('正在发送请求到 /api/novel/start...');
+                
+                const response = await fetch('/api/novel/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        genre: genre, 
+                        style: style, 
+                        total_chapters: totalChapters, 
+                        custom_intro: customIntro 
+                    }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                console.log('收到响应，状态码:', response.status);
+                
+                const data = await response.json();
+                console.log('响应数据:', data);
+
+                if (data.success) {
+                    novelState = data;
+                    // 初始化章节内容存储
+                    if (!novelState.chapters_content) {
+                        novelState.chapters_content = {};
+                    }
+                    novelState.chapters_content[1] = data.content;
+                    console.log('小说创建成功！章节:', data.chapter, '字数:', data.content.length);
+                    displayNovelContent(data.content, data.chapter, data.total_chapters, data.is_completed);
+                    console.log(`小说第一章生成成功！字数: ${data.content.length}, 耗时: ${data.generation_time || '未知'}秒`);
+                } else {
+                    // 显示详细错误信息
+                    console.error('❌ 小说创建失败:', data);
+                    let errorMsg = data.error || '未知错误';
+                    if (data.debug_info) {
+                        console.error('调试信息:', data.debug_info);
+                        errorMsg += '\n\n详细信息：' + JSON.stringify(data.debug_info, null, 2);
+                    }
+                    showError('novelContent', '❌ 小说创建失败：' + errorMsg);
+                }
+            } catch (error) {
+                console.error(' 请求异常:', error);
+                if (error.name === 'AbortError') {
+                    showError('novelContent', '⏱️ 请求超时（超过3分钟）。请检查网络连接或稍后重试。');
+                } else {
+                    showError('novelContent', '❌ 请求失败: ' + error.message);
+                }
+            }
+        }
+
+        // 显示小说内容
+        function displayNovelContent(content, chapter, totalChapters, isCompleted) {
+            document.getElementById('novelChapter').textContent = chapter;
+            document.getElementById('novelTotal').textContent = totalChapters > 0 ? totalChapters : '∞';
+            
+            // 从novelState获取题材和风格信息
+            const genre = novelState && novelState.genre ? novelState.genre : '';
+            const style = novelState && novelState.style ? novelState.style : '';
+            document.getElementById('novelGenreDisplay').textContent = genre;
+            document.getElementById('novelStyleDisplay').textContent = style;
+
+            const headerDiv = document.getElementById('novelHeader');
+            headerDiv.querySelector('h2').textContent = `${genre}小说 - ${style}风格`;
+            headerDiv.querySelector('p').textContent = totalChapters > 0 ? `共${totalChapters}章` : '无限连载模式';
+
+            const contentDiv = document.getElementById('novelContent');
+            contentDiv.innerHTML = `
+                <h3>📄 第${chapter}章</h3>
+                <hr>
+                <div class="story-display novel-display">${content.replace(/\n/g, '<br>')}</div>
+            `;
+
+            // 更新章节导航
+            updateChapterNavigation(chapter);
+
+            const actionsDiv = document.getElementById('novelActions');
+            const nextBtn = document.getElementById('nextChapterBtn');
+
+            if (isCompleted) {
+                actionsDiv.innerHTML = '<div class="ending-success"><h3>🎉 小说已完结！感谢阅读！</h3><p><strong>你可以在左侧重新创建新的小说</strong></p></div>';
+            } else {
+                nextBtn.style.display = 'inline-block';
+            }
+        }
+
+        // 更新章节导航
+        function updateChapterNavigation(currentChapter) {
+            const navDiv = document.getElementById('chapterNavigation');
+            
+            if (!novelState || !novelState.chapters_content) {
+                console.log('⚠️ novelState 或 chapters_content 不存在');
+                navDiv.style.display = 'none';
+                return;
+            }
+            
+            const availableChapters = Object.keys(novelState.chapters_content).map(Number).sort((a, b) => a - b);
+            console.log('📑 可用章节:', availableChapters);
+            console.log('📊 当前章节:', currentChapter);
+            console.log('📚 chapters_content keys:', Object.keys(novelState.chapters_content));
+            
+            // 只要有章节就显示导航（即使只有1章）
+            if (availableChapters.length === 0) {
+                navDiv.style.display = 'none';
+                return;
+            }
+            
+            navDiv.style.display = 'flex';
+            navDiv.innerHTML = '<p style="width: 100%; margin-bottom: 0.5rem; font-weight: bold; color: #667eea;">📑 章节导航：</p>';
+            
+            availableChapters.forEach(chapNum => {
+                const btn = document.createElement('button');
+                btn.className = 'chapter-btn';
+                if (chapNum === currentChapter) {
+                    btn.classList.add('active');
+                }
+                btn.textContent = `第${chapNum}章`;
+                btn.onclick = () => gotoChapter(chapNum);
+                navDiv.appendChild(btn);
+            });
+            
+            console.log(`✅ 章节导航已更新，共 ${availableChapters.length} 章`);
+        }
+
+        // 跳转到指定章节
+        async function gotoChapter(chapterNum) {
+            showLoading('novelContent', `📖 正在加载第${chapterNum}章...`);
+            
+            try {
+                const response = await fetch('/api/novel/goto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chapter: chapterNum })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    novelState.current_chapter = data.chapter;
+                    displayNovelContent(data.content, data.chapter, data.total_chapters, data.is_completed);
+                } else {
+                    showError('novelContent', data.error);
+                }
+            } catch (error) {
+                showError('novelContent', '请求失败: ' + error.message);
+            }
+        }
+
+        // 下一章
+        async function nextChapter() {
+            showLoading('novelContent', '✍️️ AI正在创作下一章...\n预计需要10-40秒');
+            document.getElementById('nextChapterBtn').disabled = true;
+        
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分钟超时
+        
+                const response = await fetch('/api/novel/next', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: controller.signal
+                });
+        
+                clearTimeout(timeoutId);
+        
+                const data = await response.json();
+                console.log('下一章响应:', data);
+        
+                if (data.success) {
+                    if (data.is_completed) {
+                        console.log('小说已完结');
+                        novelState.is_completed = true;
+                        displayNovelContent('', data.chapter, data.total_chapters, true);
+                    } else {
+                        // 更新novelState，但保留之前已生成的章节内容
+                        if (!novelState.chapters_content) {
+                            novelState.chapters_content = {};
+                        }
+                        
+                        // 保存新章节内容
+                        novelState.chapters_content[data.chapter] = data.content;
+                        novelState.current_chapter = data.chapter;
+                        novelState.genre = data.genre;
+                        novelState.style = data.style;
+                        
+                        console.log(`✅ 第${data.chapter}章已保存到本地状态`);
+                        console.log(`📚 当前共有 ${Object.keys(novelState.chapters_content).length} 章`);
+                        
+                        displayNovelContent(data.content, data.chapter, data.total_chapters, false);
+                        console.log(`第${data.chapter}章生成成功！字数: ${data.content.length}, 耗时: ${data.generation_time || '未知'}秒`);
+                                
+                        // 重新启用下一章按钮
+                        document.getElementById('nextChapterBtn').disabled = false;
+                    }
+                } else {
+                    // 显示详细错误信息
+                    console.error('生成下一章失败:', data);
+                    let errorMsg = data.error;
+                    if (data.debug_info) {
+                        console.error('调试信息:', data.debug_info);
+                        errorMsg += '\n\n调试信息已输出到控制台';
+                    }
+                    showError('novelContent', errorMsg);
+                    document.getElementById('nextChapterBtn').disabled = false;
+                }
+            } catch (error) {
+                console.error('请求异常:', error);
+                if (error.name === 'AbortError') {
+                    showError('novelContent', '⏱️ 请求超时（超过3分钟）。请检查网络连接或稍后重试。');
+                } else {
+                    showError('novelContent', '❌ 请求失败: ' + error.message);
+                }
+                document.getElementById('nextChapterBtn').disabled = false;
+            }
+        }
+
+        // 重置小说
+        async function resetNovel() {
+            try {
+                await fetch('/api/novel/reset', { method: 'POST' });
+                novelState = null;
+                document.getElementById('novelReader').classList.add('hidden');
+                document.getElementById('novelConfig').classList.remove('hidden');
+            } catch (error) {
+                console.error('重置失败:', error);
+            }
+        }
+
+        // ==================== 漫画功能 ====================
+
+        // 开始漫画
+        async function startComic() {
+            const genre = document.getElementById('comicGenre').value;
+            const style = document.getElementById('comicStyle').value;
+            const chapterMode = document.querySelector('input[name="comicChapterMode"]:checked').value;
+            const totalChapters = chapterMode === 'fixed' ? parseInt(document.getElementById('comicTotalChapters').value) : 0;
+            const customIntro = document.getElementById('comicIntro').value;
+
+            console.log('开始创建漫画...');
+            console.log('题材:', genre, '风格:', style, '总章数:', totalChapters);
+
+            // 立即显示加载状态
+            document.getElementById('comicConfig').classList.add('hidden');
+            document.getElementById('comicReader').classList.remove('hidden');
+            showLoading('comicContent', '🎨 AI漫画家正在创作第一章分镜...\n⚡ 分镜脚本生成通常需要10-30秒');
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分钟超时
+
+                console.log('正在发送请求到 /api/comic/start...');
+                
+                const response = await fetch('/api/comic/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        genre: genre, 
+                        style: style, 
+                        total_chapters: totalChapters, 
+                        custom_intro: customIntro 
+                    }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                console.log('收到响应，状态码:', response.status);
+                
+                const data = await response.json();
+                console.log('响应数据:', data);
+
+                if (data.success) {
+                    comicState = data;
+                    // 初始化章节内容存储
+                    if (!comicState.chapters_content) {
+                        comicState.chapters_content = {};
+                    }
+                    comicState.chapters_content[1] = data.content;
+                    console.log('漫画创建成功！章节:', data.chapter);
+                    displayComicContent(data.content, data.chapter, data.total_chapters, data.is_completed);
+                    console.log(`漫画第一章生成成功！耗时: ${data.generation_time || '未知'}秒`);
+                    
+                    // 异步生成图片（不阻塞用户）
+                    generateComicImagesAsync(1);
+                } else {
+                    // 显示详细错误信息
+                    console.error('❌ 漫画创建失败:', data);
+                    let errorMsg = data.error || '未知错误';
+                    showError('comicContent', '❌ 漫画创建失败：' + errorMsg);
+                }
+            } catch (error) {
+                console.error(' 请求异常:', error);
+                if (error.name === 'AbortError') {
+                    showError('comicContent', '⏱️ 请求超时（超过3分钟）。请检查网络连接或稍后重试。');
+                } else {
+                    showError('comicContent', '❌ 请求失败: ' + error.message);
+                }
+            }
+        }
+
+        // 显示漫画内容
+        function displayComicContent(content, chapter, totalChapters, isCompleted) {
+            document.getElementById('comicChapter').textContent = chapter;
+            document.getElementById('comicTotal').textContent = totalChapters > 0 ? totalChapters : '∞';
+                    
+            // 从 comicState获取题材和风格信息
+            const genre = comicState && comicState.genre ? comicState.genre : '';
+            const style = comicState && comicState.style ? comicState.style : '';
+            document.getElementById('comicGenreDisplay').textContent = genre;
+            document.getElementById('comicStyleDisplay').textContent = style;
+        
+            const headerDiv = document.getElementById('comicHeader');
+            headerDiv.querySelector('h2').textContent = `${genre}漫画 - ${style}风格`;
+            headerDiv.querySelector('p').textContent = totalChapters > 0 ? `共${totalChapters}章` : '无限连载模式';
+        
+            const contentDiv = document.getElementById('comicContent');
+                    
+            // 生成单幅漫画展示HTML
+            let panelHtml = '';
+            if (content && content.panel) {
+                const panel = content.panel;
+                const imageUrl = panel.image_url || '';
+                const imageError = panel.image_error || '';
+                const noticeEl = document.getElementById('imageGenerationNotice');
+                const isGenerating = !imageUrl && !imageError && noticeEl !== null;
+
+                // 图片区域 HTML
+                let imageAreaHtml = '';
+                if (imageUrl) {
+                    imageAreaHtml = `
+                        <div style="margin-bottom: 2rem; text-align: center;">
+                            <img src="${imageUrl}" alt="第${chapter}章"
+                                 style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <div style="display: none; padding: 1rem; background: #f0f0f0; border-radius: 8px; color: #666;">
+                                ⚠️ 图片加载失败（URL 可能已过期）
+                            </div>
+                        </div>`;
+                } else if (imageError) {
+                    imageAreaHtml = `
+                        <div style="margin-bottom: 2rem; text-align: center; padding: 2rem; background: #fff3cd; border-radius: 8px; border: 1px dashed #ffc107;">
+                            <p style="color: #856404; margin: 0; font-size: 0.95rem;">⚠️ 图片生成失败：${imageError}</p>
+                            <button onclick="generateComicImagesAsync(${chapter})" style="margin-top: 0.8rem; padding: 0.4rem 1rem; background: #ffc107; color: #856404; border: none; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">🔄 点击重试</button>
+                        </div>`;
+                } else if (isGenerating) {
+                    imageAreaHtml = `
+                        <div style="margin-bottom: 2rem; text-align: center; padding: 3rem; background: #f8f9fa; border-radius: 8px;">
+                            <div class="spinner" style="width: 40px; height: 40px; border-width: 3px;"></div>
+                            <p style="color: #666; margin-top: 1rem; font-size: 1rem;">🖼️ 正在生成漫画图片...</p>
+                        </div>`;
+                } else {
+                    imageAreaHtml = `
+                        <div style="margin-bottom: 2rem; text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 8px; border: 1px dashed #ccc;">
+                            <p style="color: #999; margin: 0; font-size: 0.9rem;">暂无图片</p>
+                        </div>`;
+                }
+
+                panelHtml = `
+                    <div style="background: white; padding: 2rem; margin: 1rem 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #4facfe;">
+                            <h4 style="margin: 0; color: #4facfe; font-size: 1.3rem;">🎨 第${chapter}章核心画面</h4>
+                            <span style="background: #4facfe; color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.9rem;">${panel.shot_type} · ${panel.angle}</span>
+                        </div>
+                        ${imageAreaHtml}
+                        <div style="margin-bottom: 1.5rem;">
+                            <p style="font-size: 1.1rem; line-height: 1.8; color: #333; margin-bottom: 0.5rem;"><strong>🖼️ 画面描述：</strong></p>
+                            <p style="font-size: 1rem; line-height: 1.8; color: #555; margin-left: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">${panel.description_cn || panel.description}</p>
+                        </div>
+                        ${panel.dialogue ? `
+                            <div style="background: #f0f8ff; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #4facfe;">
+                                <p style="margin: 0; font-size: 1rem; color: #333;"><strong>💬 对白：</strong>${panel.dialogue}</p>
+                            </div>
+                        ` : ''}
+                        ${panel.sfx ? `
+                            <div style="background: #fff5e6; padding: 0.8rem; border-radius: 8px; margin: 0.5rem 0;">
+                                <p style="margin: 0; font-size: 0.95rem; color: #ff6b35;"><strong>🔊 音效：</strong>${panel.sfx}</p>
+                            </div>
+                        ` : ''}
+                        ${panel.manga_techniques ? `
+                            <div style="background: #f0f0f0; padding: 0.8rem; border-radius: 8px; margin: 0.5rem 0;">
+                                <p style="margin: 0; font-size: 0.85rem; color: #888;"><strong>🎨 日漫技法：</strong>${panel.manga_techniques}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+                    
+            contentDiv.innerHTML = `
+                <h3>📄 第${chapter}章 - ${content.title || ''}</h3>
+                <hr>
+                <div style="background: linear-gradient(to bottom, #f8f9fa, #e9ecef); padding: 2rem; border-radius: 10px; border-left: 5px solid #4facfe;">
+                    ${panelHtml}
+                </div>
+            `;
+        
+            // 更新章节导航
+            updateComicChapterNavigation(chapter);
+        
+            const actionsDiv = document.getElementById('comicActions');
+            const nextBtn = document.getElementById('nextComicBtn');
+        
+            if (isCompleted) {
+                actionsDiv.innerHTML = '<div class="ending-success"><h3>🎉 漫画已完结！感谢阅读！</h3><p><strong>你可以在左侧重新创建新的漫画</strong></p></div>';
+            } else {
+                nextBtn.style.display = 'inline-block';
+            }
+        }
+
+        // 更新漫画章节导航
+        function updateComicChapterNavigation(currentChapter) {
+            const navDiv = document.getElementById('comicChapterNavigation');
+            
+            if (!comicState || !comicState.chapters_content) {
+                console.log('⚠️ comicState 或 chapters_content 不存在');
+                navDiv.style.display = 'none';
+                return;
+            }
+            
+            const availableChapters = Object.keys(comicState.chapters_content).map(Number).sort((a, b) => a - b);
+            console.log('📑 可用章节:', availableChapters);
+            console.log('📊 当前章节:', currentChapter);
+            
+            // 只要有章节就显示导航（即使只有1章）
+            if (availableChapters.length === 0) {
+                navDiv.style.display = 'none';
+                return;
+            }
+            
+            navDiv.style.display = 'flex';
+            navDiv.innerHTML = '<p style="width: 100%; margin-bottom: 0.5rem; font-weight: bold; color: #4facfe;">📑 章节导航：</p>';
+            
+            availableChapters.forEach(chapNum => {
+                const btn = document.createElement('button');
+                btn.className = 'chapter-btn';
+                if (chapNum === currentChapter) {
+                    btn.classList.add('active');
+                }
+                btn.textContent = `第${chapNum}章`;
+                btn.onclick = () => gotoComicChapter(chapNum);
+                navDiv.appendChild(btn);
+            });
+            
+            console.log(`✅ 章节导航已更新，共 ${availableChapters.length} 章`);
+        }
+
+        // 跳转到指定漫画章节
+        async function gotoComicChapter(chapterNum) {
+            showLoading('comicContent', `📖 正在加载第${chapterNum}章...`);
+            
+            try {
+                const response = await fetch('/api/comic/goto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chapter: chapterNum })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    comicState.current_chapter = data.chapter;
+                    displayComicContent(data.content, data.chapter, data.total_chapters, data.is_completed);
+                } else {
+                    showError('comicContent', data.error);
+                }
+            } catch (error) {
+                showError('comicContent', '请求失败: ' + error.message);
+            }
+        }
+
+        // 下一章漫画
+        async function nextComicChapter() {
+            showLoading('comicContent', '✍️️ AI正在创作下一章漫画...\n⚡ 漫画脚本生成通常需要10-30秒');
+            document.getElementById('nextComicBtn').disabled = true;
+        
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000); // 2分钟超时（只生成脚本）
+        
+                const response = await fetch('/api/comic/next', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: controller.signal
+                });
+        
+                clearTimeout(timeoutId);
+        
+                const data = await response.json();
+                console.log('下一章漫画响应:', data);
+        
+                if (data.success) {
+                    if (data.is_completed) {
+                        console.log('漫画已完结');
+                        comicState.is_completed = true;
+                        displayComicContent('', data.chapter, data.total_chapters, true);
+                    } else {
+                        // 更新comicState，但保留之前已生成的章节内容
+                        if (!comicState.chapters_content) {
+                            comicState.chapters_content = {};
+                        }
+                        
+                        // 保存新章节内容
+                        comicState.chapters_content[data.chapter] = data.content;
+                        comicState.current_chapter = data.chapter;
+                        comicState.genre = data.genre;
+                        comicState.style = data.style;
+                        
+                        console.log(`✅ 第${data.chapter}章已保存到本地状态`);
+                        console.log(`📚 当前共有 ${Object.keys(comicState.chapters_content).length} 章`);
+                        
+                        displayComicContent(data.content, data.chapter, data.total_chapters, false);
+                        console.log(`第${data.chapter}章生成成功！耗时: ${data.generation_time || '未知'}秒`);
+                        
+                        // 异步生成图片（不阻塞用户）
+                        generateComicImagesAsync(data.chapter);
+                                
+                        // 重新启用下一章按钮
+                        document.getElementById('nextComicBtn').disabled = false;
+                    }
+                } else {
+                    // 显示详细错误信息
+                    console.error('生成下一章漫画失败:', data);
+                    let errorMsg = data.error;
+                    showError('comicContent', errorMsg);
+                    document.getElementById('nextComicBtn').disabled = false;
+                }
+            } catch (error) {
+                console.error('请求异常:', error);
+                if (error.name === 'AbortError') {
+                    showError('comicContent', '⏱️ 请求超时（超过3分钟）。请检查网络连接或稍后重试。');
+                } else {
+                    showError('comicContent', '❌ 请求失败: ' + error.message);
+                }
+                document.getElementById('nextComicBtn').disabled = false;
+            }
+        }
+
+        // 重置漫画
+        async function resetComic() {
+            try {
+                await fetch('/api/comic/reset', { method: 'POST' });
+                comicState = null;
+                document.getElementById('comicReader').classList.add('hidden');
+                document.getElementById('comicConfig').classList.remove('hidden');
+            } catch (error) {
+                console.error('重置失败:', error);
+            }
+        }
+
+        // 异步生成漫画图片（不阻塞用户）
+        async function generateComicImagesAsync(chapterNum) {
+            console.log(`🖼️ 开始为第${chapterNum}章异步生成图片...`);
+            
+            // 显示一个轻量的提示
+            const contentDiv = document.getElementById('comicContent');
+            const noticeDiv = document.createElement('div');
+            noticeDiv.id = 'imageGenerationNotice';
+            noticeDiv.style.cssText = 'background: #fff3cd; color: #856404; padding: 1rem; border-radius: 8px; margin: 1rem 0; text-align: center; border-left: 4px solid #ffc107;';
+            noticeDiv.innerHTML = `
+                <p style="margin: 0; font-size: 0.95rem;">
+                    🖼️ 正在后台生成漫画图片，请稍候...
+                </p>
+            `;
+            
+            // 在内容顶部插入提示
+            const firstChild = contentDiv.firstChild;
+            if (firstChild) {
+                contentDiv.insertBefore(noticeDiv, firstChild);
+            } else {
+                contentDiv.appendChild(noticeDiv);
+            }
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分钟超时（图片生成需要较长时间）
+                
+                const response = await fetch('/api/comic/generate_images', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chapter: chapterNum }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log(`✅ 第${chapterNum}章图片生成完成！耗时: ${data.generation_time || '未知'}秒`);
+                    
+                    // 更新本地状态
+                    comicState.chapters_content[chapterNum] = data.content;
+                    
+                    // 移除提示
+                    const notice = document.getElementById('imageGenerationNotice');
+                    if (notice) {
+                        notice.remove();
+                    }
+                    
+                    // 重新渲染内容以显示图片
+                    displayComicContent(data.content, chapterNum, 
+                        comicState.total_chapters || 0, 
+                        comicState.is_completed || false);
+                    
+                    // 显示成功提示
+                    const successDiv = document.createElement('div');
+                    successDiv.style.cssText = 'background: #d4edda; color: #155724; padding: 0.8rem; border-radius: 8px; margin: 1rem 0; text-align: center; border-left: 4px solid #28a745;';
+                    successDiv.innerHTML = '<p style="margin: 0;">✅ 漫画图片生成完成！</p>';
+                    const firstChild = contentDiv.firstChild;
+                    if (firstChild) {
+                        contentDiv.insertBefore(successDiv, firstChild);
+                    } else {
+                        contentDiv.appendChild(successDiv);
+                    }
+                    
+                    // 3秒后自动移除成功提示
+                    setTimeout(() => {
+                        successDiv.remove();
+                    }, 3000);
+                } else {
+                    console.error('❌ 图片生成失败:', data.error);
+                    const notice = document.getElementById('imageGenerationNotice');
+                    if (notice) {
+                        notice.innerHTML = `<p style="margin: 0; color: #dc3545;">❌ 图片生成失败: ${data.error}</p>`;
+                        notice.style.background = '#f8d7da';
+                        notice.style.color = '#721c24';
+                        notice.style.borderLeftColor = '#dc3545';
+                    }
+                }
+            } catch (error) {
+                console.error('图片生成请求异常:', error);
+                const notice = document.getElementById('imageGenerationNotice');
+                if (notice) {
+                    if (error.name === 'AbortError') {
+                        notice.innerHTML = '<p style="margin: 0; color: #dc3545;">⏱️ 图片生成超时（超过3分钟）</p>';
+                    } else {
+                        notice.innerHTML = `<p style="margin: 0; color: #dc3545;">❌ 图片生成失败: ${error.message}</p>`;
+                    }
+                    notice.style.background = '#f8d7da';
+                    notice.style.color = '#721c24';
+                    notice.style.borderLeftColor = '#dc3545';
+                }
+            }
+        }
+
+        // ==================== 工具函数 ====================
+
+        // 显示加载动画
+        function showLoading(containerId, message = '🎭 正在生成内容...') {
+            const container = document.getElementById(containerId);
+            const lines = message.split('\n');
+            
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p style="font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem;">${lines[0]}</p>
+                    ${lines[1] ? `<p style="font-size: 0.95rem; color: #667eea; margin-bottom: 0.5rem;">${lines[1]}</p>` : ''}
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div style="margin-top: 1rem; padding: 1rem; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <p style="font-size: 0.85rem; color: #666; margin: 0.3rem 0;">💡 AI正在思考中，请稍候...</p>
+                        <p style="font-size: 0.85rem; color: #666; margin: 0.3rem 0;">⏱️ 通常需要5-30秒，首次可能更长</p>
+                        <p style="font-size: 0.85rem; color: #999; margin: 0.3rem 0;">🔄 如果超过60秒未完成，请检查网络</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 显示错误信息
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="error-message">
+                    <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">❌ ${message}</p>
+                    <button onclick="location.reload()" class="btn-secondary" style="margin-top: 0.5rem;">
+                        🔄 刷新页面重试
+                    </button>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
