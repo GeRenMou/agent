@@ -1,0 +1,857 @@
+================================================================================
+        面向对象程序设计 I 实验报告
+        山西大学 自动化与软件学院 2025 级
+        2025-2026 学年第二学期
+        指导教师：张伟东
+================================================================================
+
+目  录
+  任务 1：熟悉编译环境（Hello World）
+  任务 2：计算整数因子的和（sumOfFactors）
+  任务 3：重载函数与带默认形参值函数的二义性
+  任务 4：Factorial 阶乘类
+  任务 5：Rectangle 类与 Point 类
+  任务 6：Complex 复数类
+  任务 7：设计银行类（CBank/IBank/ABank）
+  任务 8：商品类（Product）
+  任务 9：学生成绩信息类（Student/StudentInfo）
+  任务 10：Circle 圆类
+
+
+================================================================================
+任务 1：熟悉编译环境（Hello World）
+================================================================================
+
+【实验要求】
+1. 编写 HelloWorld 程序
+2. 编译和运行：
+   1) 打开编译器
+   2) 新建项目
+   3) 编写代码
+   4) 编译运行
+
+【代码实现】
+见 实验1/main.cpp
+
+【实验总结】
+本任务无需填写总结性问题。通过本实验熟悉了 Visual Studio 2022 的基本使用
+流程，包括创建项目、编写代码、编译和运行 C++ 程序。
+
+
+================================================================================
+任务 2：计算整数因子的和（sumOfFactors）
+================================================================================
+
+【实验要求】
+编写一个程序，函数的功能是计算并输出给定整数 n 的所有因子（不包括 1 与
+其自身）之和。
+1. 从用户输入一个整数 n（1 < n <= 1000）
+2. 计算并输出该整数的所有因子的和（不包括 1 和 n 本身）
+3. 确保输入的整数在有效范围内，否则提示错误信息
+
+【函数设计】
+函数 sumOfFactors 的设计步骤：
+1) 初始化因子和 sum 为 0
+2) 遍历从 2 到 n/2 之间的所有数，检查是否是 n 的因子（即 n % i == 0）
+3) 如果是因子，则将该因子加到 sum 中
+4) 最后返回因子和 sum
+
+【代码实现】
+见 实验2/main.cpp
+
+【实验总结】
+本任务无需填写总结性问题。通过本实验掌握了函数的定义与调用、循环遍历、
+条件判断以及输入范围验证。
+
+
+================================================================================
+任务 3：重载函数与带默认形参值函数的二义性
+================================================================================
+
+【实验要求】
+自举一例说明重载函数与带默认形参值函数在调用时可能产生的二义性问题，并
+总结避免二义性问题的注意事项。
+
+定义两个名为 print 的函数：
+  - void print(int x)：重载函数
+  - void print(int x, int y = 10)：带默认参数的函数
+当调用 print(5) 时，编译器会遇到二义性问题。
+
+【代码实现】
+见 实验3/main.cpp
+
+【实验总结 —— 避免二义性问题的注意事项】
+
+1. 二义性产生原因：
+   当重载函数中的某一个带有默认参数时，编译器可能无法确定调用哪个版本。
+   例如：
+     void print(int x);
+     void print(int x, int y = 10);
+   调用 print(5) 时两个函数均可匹配，编译器无法抉择，产生编译错误。
+
+2. 避免二义性的注意事项：
+   (1) 避免同时定义"参数个数不同但可通过默认参数补足"的重载函数。
+   (2) 如果必须同时定义，调用时明确传参以消除歧义，如 print(5, 20) 或
+       通过函数指针/类型转换明确指定。
+   (3) 设计 API 时优先选择一种方式：要么用重载，要么用默认参数，不要混用。
+   (4) 遵循"最少惊讶原则"：让调用者一眼就能判断会调用哪个版本。
+
+
+================================================================================
+任务 4：Factorial 阶乘类
+================================================================================
+
+【实验要求】
+编写一个名为 Factorial 的阶乘类，包含：
+  - 私有数据成员：int value（存储输入值）、long long fact（存储阶乘结果）
+  - 构造函数：Factorial(int n)，初始化 value 并调用 calculateFactorial
+  - 私有成员函数：calculateFactorial()，计算阶乘
+  - 公共成员函数：displayResult()，显示 value! = fact
+
+【代码实现】
+见 实验4/main.cpp
+
+【实验总结 —— 面向对象和面向过程开发总结】
+
+┌──────────────┬─────────────────────────┬─────────────────────────┐
+│   比较维度    │      面向过程            │      面向对象            │
+├──────────────┼─────────────────────────┼─────────────────────────┤
+│ 核心思想      │ 以函数/过程为中心         │ 以对象/数据为中心         │
+│ 程序组织      │ 函数调用链               │ 类与对象的交互            │
+│ 数据与操作    │ 数据与函数分离           │ 数据与操作封装在一起       │
+│ 代码复用      │ 通过函数复用             │ 通过继承、组合复用        │
+│ 可维护性      │ 大型项目维护困难         │ 模块化强，易于维护        │
+│ 代表语言      │ C、Pascal               │ C++、Java、Python        │
+│ 本实验体现    │ 实验2 的函数式求解       │ 实验4 的 Factorial 类    │
+└──────────────┴─────────────────────────┴─────────────────────────┘
+
+本实验通过 Factorial 类体现了面向对象的核心特征：
+  - 封装：value 和 fact 为私有成员，外部只能通过公有接口访问
+  - 构造函数自动初始化，确保对象创建时状态正确
+  - 将数据和操作绑定在一起，使代码结构更清晰
+
+
+================================================================================
+任务 5：Rectangle 类与 Point 类
+================================================================================
+
+【实验要求】
+编写一个名为 Rectangle 的矩形类，包含：
+  - 私有数据成员：Point bottomLeft（左下角）、Point topRight（右上角）
+  - 成员函数：bool isRectangle() 判断是否构成矩形
+  - 成员函数：int area() 计算矩形面积
+需要同时设计 Point 类。
+
+【代码实现】
+见 实验5/main.cpp
+
+【实验总结 —— 能否将 Point 类的定义放在 Rectangle 类后面？】
+
+回答：不可以直接将 Point 类的完整定义放在 Rectangle 类后面。
+
+原因：
+  Rectangle 类的成员变量类型为 Point（bottomLeft 和 topRight），编译器
+  在编译 Rectangle 类时需要知道 Point 类的完整定义（包括大小、成员等）。
+  如果 Point 类定义在 Rectangle 之后，编译器在处理 Rectangle 时将无法
+  确定 Point 类型，导致编译错误。
+
+解决方案（如果可以）：
+  使用前向声明（forward declaration）配合指针或引用：
+    class Point;  // 前向声明
+    class Rectangle {
+        Point* bottomLeft;  // 使用指针而非对象
+        Point* topRight;
+        ...
+    };
+  Rectangle 中只使用 Point 的指针或引用时，前向声明即可满足编译要求，
+  Point 的完整定义可以放在 Rectangle 后面。但使用对象本身（非指针/引用）
+  时必须先有完整定义。
+
+类的聚合设计的好处：
+  1) 代码复用：避免重复定义坐标成员变量
+  2) 结构清晰：矩形由两个点定义，语义直观
+  3) 易于扩展：修改 Point 类不影响 Rectangle 类的接口
+
+
+================================================================================
+任务 6：Complex 复数类
+================================================================================
+
+【实验要求】
+编写一个名为 Complex 的复数类，实现两复数相加的函数 add()。
+  - 私有成员：double real（实部）、double imag（虚部）
+  - 构造函数：Complex(double r, double i)
+  - getter：double getReal() const、double getImag() const
+  - 静态方法：static Complex add(const Complex& c1, const Complex& c2)
+
+【代码实现】
+见 实验6/main.cpp
+
+【实验总结 —— 封装性、构造函数、静态方法的设计要点】
+
+1. 封装性：
+   将 real 和 imag 设为 private，外部只能通过公有的 getReal() 和
+   getImag() 访问。这样可以在未来修改内部表示（如改用极坐标存储）
+   而不影响外部调用代码。
+
+2. 构造函数：
+   构造函数 Complex(double r, double i) 确保对象在创建时就被正确
+   初始化，避免出现未初始化的"垃圾值"。使用初始化列表可以提高效率。
+
+3. 静态方法 add：
+   设计为 static 使得 add 函数不依赖于具体的对象实例，可以直接通过
+   类名调用：Complex::add(c1, c2)。这体现了"操作属于类本身而非某个
+   对象"的设计思路。参数使用 const 引用避免不必要拷贝，同时保证参数
+   不被修改。
+
+
+================================================================================
+任务 7：设计银行类（CBank/IBank/ABank）
+================================================================================
+
+【实验要求】
+设计 3 个类：CBank（中国银行）、IBank（工商银行）、ABank（农业银行）。
+每个类包含私有数据 balance，存放储户存款数。设计 total 函数计算储户
+在 3 家银行的总存款数。
+
+【代码实现】
+见 实验7/main.cpp
+
+【实验总结 —— 友元函数声明的目的】
+
+友元函数声明为类的"朋友"，使其可以访问该类的私有（private）和保护
+（protected）成员。在本实验中，total 函数需要同时访问 CBank、IBank
+和 ABank 三个类的私有成员 balance，因此需在每个类中声明为 friend。
+
+使用场景：
+  - 多个类之间需要共享私有数据时
+  - 运算符重载（如重载 << 输出运算符）
+  - 某些需要高效访问内部数据的全局函数
+
+注意：友元破坏了封装性，应谨慎使用，仅在确实必要时声明。
+
+【实验总结 —— 以常引用作为形参的目的】
+
+const 引用的优点：
+  1) 避免拷贝：引用传递不产生临时对象，节省内存和时间（尤其对大对象）
+  2) 保护实参：const 修饰保证函数内部不会意外修改实参的值
+  3) 可以接受临时对象：const 引用可以绑定到右值（如字面量、表达式结果）
+
+示例：double total(const CBank& cBank, const IBank& iBank, const ABank& aBank)
+  - const 保证函数不会修改任何银行对象的 balance
+  - & 引用避免拷贝整个银行对象
+
+
+================================================================================
+任务 8：商品类（Product）
+================================================================================
+
+【实验要求】
+声明 Product 商品类，计算当日商品的总销售额 sum 以及平均售价。
+已知销售数据：
+  销售员号 101，销售数量 5，单价 23.5
+  销售员号 102，销售数量 12，单价 24.56
+  销售员号 103，销售数量 100，单价 21.5
+
+【代码实现】
+见 实验8/main.cpp
+
+【实验总结 —— 静态数据成员的使用目的】
+
+静态数据成员属于类本身，不属于某个具体对象，被该类的所有对象共享。
+使用目的：
+  1) 共享数据：所有对象共同维护一份数据（如本实验的 totalSum 和
+     totalSales，需要跨所有 Product 对象累计）。
+  2) 节省内存：不随对象数量增加而重复存储。
+  3) 全局状态管理：适合计数器、缓存、配置等场景。
+  4) 无需对象即可访问：可通过类名直接访问（需配合 public）。
+
+【实验总结 —— 静态成员函数的使用目的】
+
+静态成员函数同样属于类本身，不依赖于具体对象。
+使用目的：
+  1) 操作静态数据成员：如 getAveragePrice() 计算 totalSum/totalSales
+  2) 无需实例化：可以通过 Product::getAveragePrice() 直接调用
+  3) 工具函数：提供与类相关但不依赖对象状态的功能
+  4) 工厂方法：用于创建和管理对象实例
+
+注意：静态成员函数不能访问非静态成员（因为没有 this 指针）。
+
+
+================================================================================
+任务 9：学生成绩信息类（Student/StudentInfo）
+================================================================================
+
+【实验要求】
+编写学生成绩信息类，包含：学号、姓名、程序设计成绩、计算机网络成绩、
+数据库成绩。输入若干学生信息，显示：
+  - 3 门课程总分从高到低的排名
+  - 每门课程成绩均大于 85 分的学生名单
+
+【代码实现】
+见 实验9/main.cpp
+
+【实验总结 —— 如何使用对象数组存储数据】
+
+使用 C++ 标准库中的 vector<Student> 容器存储对象数组：
+  1) 定义对象数组：vector<Student> students;
+  2) 添加元素：
+     - students.push_back(Student(...));  // 在末尾添加
+     - students.emplace_back(...);        // 原地构造（C++11）
+  3) 访问元素：
+     - students[i]                         // 下标访问
+     - students.at(i)                      // 带边界检查的访问
+  4) 遍历：
+     - for (const auto& s : students)      // 范围 for 循环
+     - for (size_t i = 0; i < students.size(); i++)  // 传统 for
+
+【实验总结 —— vector 容器的常用操作函数】
+
+┌────────────────────┬──────────────────────────────────┐
+│ 函数               │ 说明                              │
+├────────────────────┼──────────────────────────────────┤
+│ push_back(val)     │ 在末尾添加元素                     │
+│ pop_back()         │ 删除末尾元素                       │
+│ size()             │ 返回元素个数                       │
+│ empty()            │ 判断是否为空                       │
+│ clear()            │ 清空所有元素                       │
+│ at(index)          │ 返回指定位置元素（带边界检查）       │
+│ front() / back()   │ 返回首/尾元素                     │
+│ insert(pos, val)   │ 在指定位置插入元素                 │
+│ erase(pos)         │ 删除指定位置元素                   │
+│ begin() / end()    │ 返回迭代器                        │
+│ resize(n)          │ 调整容器大小                       │
+│ reserve(n)         │ 预留存储空间                       │
+│ capacity()         │ 返回当前容量                       │
+└────────────────────┴──────────────────────────────────┘
+
+
+================================================================================
+任务 10：Circle 圆类
+================================================================================
+
+【实验要求】
+实现 Circle 圆类：
+  - 数据成员 float* radius 为指向半径值的指针
+  - 以 Point 类对象作为另一个数据成员表示圆心
+  - 定义判断两圆位置关系（相交/外离/内含/内切/外切）的函数
+
+【代码实现】
+见 实验10/main.cpp
+
+【实验总结 —— 指针的分类和各类指针的用法】
+
+1. 基本数据类型指针：
+   int* p = new int(5);  // 动态分配
+   delete p;             // 释放内存
+
+2. 对象指针：
+   Point* p = new Point(0, 0);
+   p->x = 10;            // 通过指针访问成员
+   delete p;
+
+3. 指向指针的指针（多级指针）：
+   int** pp;             // 通常用于二维数组或函数参数
+
+4. const 指针与指向 const 的指针：
+   const int* p1;        // 指向的值不可改
+   int* const p2;        // 指针本身不可改
+   const int* const p3;  // 两者都不可改
+
+5. void 指针（void*）：
+   可指向任意类型，使用时需强制转换
+
+6. 函数指针：
+   void (*funcPtr)(int); // 指向函数的指针，用于回调和多态
+
+7. this 指针：
+   成员函数中指向调用对象的指针
+
+8. 智能指针（C++11）：
+   unique_ptr: 独占所有权
+   shared_ptr: 共享所有权，引用计数
+   weak_ptr: 不增加引用计数的观察指针
+
+【实验总结 —— 析构函数在本练习中的作用】
+
+本实验中，Circle 类使用 float* radius 动态分配内存（new float），
+析构函数负责释放该内存（delete radius），防止内存泄漏。
+
+具体作用：
+  1) 释放动态内存：构造函数中 new 分配的内存由析构函数 delete 回收
+  2) 自动调用：对象生命周期结束时自动调用，无需手动干预
+  3) RAII 原则：资源获取即初始化，将资源生命周期绑定到对象生命周期
+  4) 防止内存泄漏：如果没有析构函数，每次创建 Circle 对象就会泄漏
+     sizeof(float) 字节的内存
+
+  注意：本例中若涉及拷贝构造和赋值运算符，还需遵循"三法则"
+  （Rule of Three），同时实现拷贝构造函数和赋值运算符重载，
+  避免浅拷贝导致的重复释放问题。
+
+
+================================================================================
+                        附录：完整实验代码
+================================================================================
+
+------------------------------------------------------------------------------
+实验 1：Hello World（实验1/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello World!" << endl;
+    cout << "欢迎学习面向对象程序设计I" << endl;
+    return 0;
+}
+
+------------------------------------------------------------------------------
+实验 2：sumOfFactors（实验2/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+using namespace std;
+
+// 求 n 的所有真因子之和（真因子：小于 n 的正整数中能整除 n 的数，
+// 不包括 1 和 n 本身）
+int sumOfFactors(int n) {
+    int sum = 0;
+    for (int i = 2; i <= n / 2; i++) {
+        if (n % i == 0) {
+            sum += i;
+        }
+    }
+    return sum;
+}
+
+int main() {
+    int n;
+    cout << "请输入一个整数 n (1 < n <= 1000): ";
+    cin >> n;
+    if (n <= 1 || n > 1000) {
+        cout << "输入不合法！n 应在 (1, 1000] 范围内。" << endl;
+        return 1;
+    }
+    int result = sumOfFactors(n);
+    cout << n << " 的真因子之和为: " << result << endl;
+    return 0;
+}
+
+------------------------------------------------------------------------------
+实验 3：函数重载与默认参数（实验3/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+using namespace std;
+
+void print(int x) {
+    cout << "调用 print(int x), x = " << x << endl;
+}
+
+void print(int x, int y = 10) {
+    cout << "调用 print(int x, int y = 10), x = " << x << ", y = " << y << endl;
+}
+
+int main() {
+    /*
+     * 分析：当调用 print(5) 时：
+     *   print(int x)                —— 精确匹配，一个 int 参数
+     *   print(int x, int y = 10)     —— 第二个参数使用默认值，也匹配
+     * 编译器报错：error C2668: 对重载函数的调用不明确
+     */
+    // print(5);  // 此调用会产生歧义，编译不通过
+    print(5, 20);  // 明确调用，输出两个参数
+    return 0;
+}
+
+------------------------------------------------------------------------------
+实验 4：Factorial 阶乘类（实验4/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+using namespace std;
+
+class Factorial {
+private:
+    int value;
+    long long fact;
+
+    void calculateFactorial() {
+        fact = 1;
+        for (int i = 1; i <= value; i++) {
+            fact *= i;
+        }
+    }
+
+public:
+    Factorial(int n) : value(n), fact(1) {
+        calculateFactorial();
+    }
+
+    void displayResult() {
+        cout << value << "! = " << fact << endl;
+    }
+};
+
+int main() {
+    int n;
+    cout << "请输入一个正整数: ";
+    cin >> n;
+    Factorial f(n);
+    f.displayResult();
+    return 0;
+}
+
+------------------------------------------------------------------------------
+实验 5：Rectangle 与 Point 类（实验5/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+class Point {
+public:
+    int x;
+    int y;
+    Point(int xCoord, int yCoord) : x(xCoord), y(yCoord) {}
+};
+
+class Rectangle {
+public:
+    Point bottomLeft;
+    Point topRight;
+
+    Rectangle(Point bl, Point tr) : bottomLeft(bl), topRight(tr) {}
+
+    bool isRectangle() {
+        return (bottomLeft.x != topRight.x) && (bottomLeft.y != topRight.y);
+    }
+
+    int area() {
+        if (!isRectangle()) return 0;
+        int width = abs(topRight.x - bottomLeft.x);
+        int height = abs(topRight.y - bottomLeft.y);
+        return width * height;
+    }
+
+    int perimeter() {
+        if (!isRectangle()) return 0;
+        int width = abs(topRight.x - bottomLeft.x);
+        int height = abs(topRight.y - bottomLeft.y);
+        return 2 * (width + height);
+    }
+
+    void display() {
+        cout << "左下角: (" << bottomLeft.x << ", " << bottomLeft.y << ")" << endl;
+        cout << "右上角: (" << topRight.x << ", " << topRight.y << ")" << endl;
+        if (isRectangle()) {
+            cout << "面积: " << area() << endl;
+            cout << "周长: " << perimeter() << endl;
+        } else {
+            cout << "无法构成矩形！" << endl;
+        }
+    }
+};
+
+int main() {
+    Point p1(0, 0);
+    Point p2(5, 3);
+    Rectangle rect(p1, p2);
+    rect.display();
+    return 0;
+}
+
+------------------------------------------------------------------------------
+实验 6：Complex 复数类（实验6/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+using namespace std;
+
+class Complex {
+private:
+    double real;
+    double imag;
+
+public:
+    Complex(double r, double i) : real(r), imag(i) {}
+
+    double getReal() const { return real; }
+    double getImag() const { return imag; }
+
+    static Complex add(const Complex& c1, const Complex& c2) {
+        return Complex(c1.real + c2.real, c1.imag + c2.imag);
+    }
+
+    void display() const {
+        cout << real;
+        if (imag >= 0) cout << " + " << imag << "i";
+        else cout << " - " << -imag << "i";
+        cout << endl;
+    }
+};
+
+int main() {
+    Complex c1(3.0, 4.0);
+    Complex c2(1.5, -2.5);
+    cout << "c1 = "; c1.display();
+    cout << "c2 = "; c2.display();
+    Complex c3 = Complex::add(c1, c2);
+    cout << "c1 + c2 = "; c3.display();
+    return 0;
+}
+
+------------------------------------------------------------------------------
+实验 7：Bank 银行类（实验7/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+using namespace std;
+
+class CBank {
+private:
+    double balance;
+public:
+    CBank(double bal) : balance(bal) {}
+    friend double total(const CBank& cBank, const class IBank& iBank,
+                        const class ABank& aBank);
+};
+
+class IBank {
+private:
+    double balance;
+public:
+    IBank(double bal) : balance(bal) {}
+    friend double total(const CBank& cBank, const IBank& iBank,
+                        const class ABank& aBank);
+};
+
+class ABank {
+private:
+    double balance;
+public:
+    ABank(double bal) : balance(bal) {}
+    friend double total(const CBank& cBank, const IBank& iBank,
+                        const ABank& aBank);
+};
+
+double total(const CBank& cBank, const IBank& iBank, const ABank& aBank) {
+    return cBank.balance + iBank.balance + aBank.balance;
+}
+
+int main() {
+    CBank c(1000.50);
+    IBank i(2000.75);
+    ABank a(3000.25);
+    cout << "CBank 余额: 1000.50" << endl;
+    cout << "IBank 余额: 2000.75" << endl;
+    cout << "ABank 余额: 3000.25" << endl;
+    cout << "三家银行总余额: " << total(c, i, a) << endl;
+    return 0;
+}
+
+------------------------------------------------------------------------------
+实验 8：Product 商品类（实验8/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+#include <vector>
+#include <iomanip>
+using namespace std;
+
+class Product {
+private:
+    int id;
+    double price;
+    double discount;
+    static double totalSum;
+    static int totalSales;
+
+public:
+    Product(int id, double p, double d) : id(id), price(p), discount(d) {}
+
+    void calculateSales() {
+        double salesPrice = price * (1 - discount / 100.0);
+        totalSum += salesPrice;
+        totalSales++;
+    }
+
+    static double getAveragePrice() {
+        if (totalSales == 0) return 0;
+        return totalSum / totalSales;
+    }
+
+    static void displaySummary() {
+        cout << fixed << setprecision(2);
+        cout << "总销售额: " << totalSum << endl;
+        cout << "总销售数量: " << totalSales << endl;
+        cout << "平均价格: " << getAveragePrice() << endl;
+    }
+
+    void display() const {
+        cout << "商品ID: " << id << ", 原价: " << price
+             << ", 折扣: " << discount << "%" << endl;
+    }
+};
+
+double Product::totalSum = 0;
+int Product::totalSales = 0;
+
+int main() {
+    vector<Product> products;
+    products.push_back(Product(101, 5, 23.5));
+    products.push_back(Product(102, 12, 24.56));
+    products.push_back(Product(103, 100, 21.5));
+    products.push_back(Product(104, 50, 10.0));
+    products.push_back(Product(105, 80, 15.0));
+
+    cout << "所有商品信息:" << endl;
+    for (const auto& p : products) p.display();
+
+    for (auto& p : products) p.calculateSales();
+
+    cout << "\n销售汇总:" << endl;
+    Product::displaySummary();
+    return 0;
+}
+
+------------------------------------------------------------------------------
+实验 9：Student 学生成绩类（实验9/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+using namespace std;
+
+class Student {
+public:
+    string id;
+    string name;
+    int prog, net, db;
+
+    Student(string id, string name, int prog, int net, int db)
+        : id(id), name(name), prog(prog), net(net), db(db) {}
+
+    int totalScore() const { return prog + net + db; }
+    double averageScore() const { return totalScore() / 3.0; }
+
+    void display() const {
+        cout << id << "\t" << name << "\t" << prog << "\t" << net << "\t"
+             << db << "\t" << totalScore() << "\t" << averageScore() << endl;
+    }
+};
+
+class StudentInfo {
+private:
+    vector<Student> students;
+public:
+    void addStudent(const Student& s) { students.push_back(s); }
+
+    void displayRanking() {
+        vector<Student> sorted = students;
+        sort(sorted.begin(), sorted.end(), [](const Student& a, const Student& b) {
+            return a.totalScore() > b.totalScore();
+        });
+        cout << "\n===== 成绩排名（按总分降序）=====" << endl;
+        cout << "排名\t学号\t姓名\t程序设计\t网络\t数据库\t总分\t平均分" << endl;
+        int rank = 1;
+        for (const auto& s : sorted) {
+            cout << rank++ << "\t";
+            s.display();
+        }
+    }
+
+    void displayHighScorers(double threshold = 85) {
+        cout << "\n===== 平均分高于 " << threshold << " 的学生 =====" << endl;
+        cout << "学号\t姓名\t程序设计\t网络\t数据库\t总分\t平均分" << endl;
+        bool found = false;
+        for (const auto& s : students) {
+            if (s.averageScore() > threshold) {
+                s.display();
+                found = true;
+            }
+        }
+        if (!found) cout << "无" << endl;
+    }
+};
+
+int main() {
+    StudentInfo info;
+    info.addStudent(Student("2024001", "张三", 90, 85, 88));
+    info.addStudent(Student("2024002", "李四", 78, 92, 80));
+    info.addStudent(Student("2024003", "王五", 95, 88, 91));
+    info.displayRanking();
+    info.displayHighScorers(85);
+    return 0;
+}
+
+------------------------------------------------------------------------------
+实验 10：Circle 圆类（实验10/main.cpp）
+------------------------------------------------------------------------------
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+class Point {
+public:
+    int x, y;
+    Point(int xCoord, int yCoord) : x(xCoord), y(yCoord) {}
+};
+
+class Circle {
+private:
+    float* radius;
+    Point center;
+
+public:
+    Circle(float r, Point c) : radius(new float(r)), center(c) {}
+
+    Circle(const Circle& other) : radius(new float(*other.radius)),
+                                   center(other.center) {}
+
+    ~Circle() { delete radius; }
+
+    float getRadius() const { return *radius; }
+    Point getCenter() const { return center; }
+
+    static void determineRelationship(const Circle& c1, const Circle& c2) {
+        float dx = (float)(c1.center.x - c2.center.x);
+        float dy = (float)(c1.center.y - c2.center.y);
+        float distance = sqrt(dx * dx + dy * dy);
+        float sumRadii = c1.getRadius() + c2.getRadius();
+        float diffRadii = fabs(c1.getRadius() - c2.getRadius());
+
+        cout << "圆心距离: " << distance << endl;
+        cout << "半径之和: " << sumRadii << endl;
+        cout << "半径之差: " << diffRadii << endl;
+
+        if (distance == 0 && diffRadii == 0)
+            cout << "关系: 两圆重合" << endl;
+        else if (distance == 0)
+            cout << "关系: 同心圆" << endl;
+        else if (distance > sumRadii)
+            cout << "关系: 相离" << endl;
+        else if (distance == sumRadii)
+            cout << "关系: 外切" << endl;
+        else if (distance > diffRadii && distance < sumRadii)
+            cout << "关系: 相交" << endl;
+        else if (distance == diffRadii)
+            cout << "关系: 内切" << endl;
+        else
+            cout << "关系: 内含" << endl;
+    }
+
+    void display() const {
+        cout << "圆心: (" << center.x << ", " << center.y
+             << "), 半径: " << *radius << endl;
+    }
+};
+
+int main() {
+    Circle c1(5.0f, Point(0, 0));
+    Circle c2(3.0f, Point(4, 0));
+    cout << "圆1: "; c1.display();
+    cout << "圆2: "; c2.display();
+    cout << endl;
+    Circle::determineRelationship(c1, c2);
+    return 0;
+}
+
+================================================================================
+                          实验报告结束
+================================================================================
